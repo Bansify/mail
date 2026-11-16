@@ -115,6 +115,8 @@ The Worker is named `mail` in the Cloudflare dashboard and `worker/wrangler.toml
   measured local numbers.
 - [docs/SENDING.md](docs/SENDING.md): outbound providers, how to switch, and the DNS records
   every option needs.
+- [docs/NATIVE_API.md](docs/NATIVE_API.md): the Android app's OAuth rules, search, batch
+  actions, Empty Trash and the `/oauth/callback` bridge.
 - [HANDOVER.md](HANDOVER.md): current state, how to verify it, and what is left to deploy.
 - [AGENTS.md](AGENTS.md): rules for working on this repo.
 - [PLAN.md](PLAN.md): status and open decisions.

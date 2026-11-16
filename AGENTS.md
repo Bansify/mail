@@ -22,7 +22,9 @@ Gothwad Mail is a webmail app for `username@APP_DOMAIN` addresses.
   database. Two URLs, two jobs: `AUTH_HUB_URL` is the base for **every server-side Accounts
   fetch** and must reach the Accounts Worker (its Custom Domain, `api.gothwadtech.com`);
   `AUTH_SIGNIN_URL` is for **browser links only** (the 401 `signinUrl` and `accountUrl`) and
-  falls back to `AUTH_HUB_URL` when unset.
+  falls back to `AUTH_HUB_URL` when unset. A bearer token is only accepted when Accounts issued
+  it to `gothwad-mail` **and** it carries the `mail` scope (otherwise 403 `insufficient_scope`);
+  see `docs/NATIVE_API.md`.
 
 Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup steps.
 

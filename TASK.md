@@ -2,6 +2,68 @@
 
 Updated every session. Newest first.
 
+## 2026-11-12 — Native app backend: OAuth enforcement, search, batch actions, App Links
+
+**Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` from `GothwadTech/accounts` and
+implement every requirement in `GothwadTech/mail` end-to-end, then run all verification.
+
+**Audit before coding (the brief was checked, not trusted)**
+
+| Claim in the brief | What the live code says |
+| --- | --- |
+| `/api/oauth/userinfo` returns `client_id`, `aud`, `scopes`/`scope`, `given_name`, `family_name` | Confirmed in `GothwadTech/accounts` `cloudflare-worker/src/routes/oauth.ts` |
+| `gothwad-mail` / `com.gothwad.mail` / those four scopes are registered | Confirmed in `migrations/0014_first_party_native.sql` |
+| Mail must enforce audience + `mail` scope | Correct: `resolveBearer` previously accepted **any** valid Accounts token, including one minted for Store or Tube — a real cross-app hole |
+| `GothwadTech/mailapp` already calls these routes | Not yet: the app is still local-only (seed data, no HTTP client). The routes are therefore built to the documented contract and covered by Worker tests, and that is stated honestly rather than claimed as an end-to-end device test |
+| `/oauth/callback` works as a static file | Only with help: the SPA rewrite and the service worker's navigation fallback would both swallow it, so both were changed |
+
+**What changed**
+
+- `worker/src/session.ts`: bearer tokens must be minted for `gothwad-mail` (`client_id` or
+  `aud`) **and** carry the `mail` scope, otherwise **403 `insufficient_scope`** (never a 401, so
+  a native client does not discard a valid token). 401/403 from Accounts, 503s, HTML, redirects
+  and timeouts keep their existing meanings. `given_name`/`family_name` are used when present
+  and fall back to splitting `name`. A bearer session now carries one `PublicAccount`
+  (`id: "bearer"`), which is what gives `/api/session` and `/api/session/meta` their
+  `unread: { username: n }` for token callers.
+- `worker/src/mail-read.ts`: `q` search over subject/from name+address/to/snippet with escaped
+  `%`/`_`, `unread`, `starred`, `hasAttachment`, `folder=all` (inbox + sent + drafts, never
+  trash), folder optional when a search is present, and the unchanged `limit`/`before`.
+- `worker/src/mail-write.ts`: `moveToInbox: true` (or `folder: "inbox"`) restores a trashed
+  message; `folder: "trash"` trashes; any other folder and any Trash+Inbox conflict is a 400.
+- `worker/src/mail-actions.ts` (new): `parseBatch` + `batchMessages` (1..100 ids, one scoped
+  statement, `deleteFromTrash` limited to Trash rows) and `emptyTrash`.
+- `worker/src/index.ts`: `POST /api/mail/messages/batch` (registered **before** the `/:id`
+  matcher) and `DELETE /api/mail/trash`, both behind `requireSession` + `assertSafeWrite`.
+- `public/oauth/callback/index.html` (new): static bridge that forwards the untouched query to
+  `com.gothwad.mail:/oauth/callback`, with an `intent://` hop on Android and a visible fallback.
+  It never exchanges the code or stores anything.
+- `public/.well-known/assetlinks.json` (new): App Links verification for `com.gothwad.mail`.
+- `public/_redirects`: both paths pinned ahead of the SPA catch-all. `vite.config.ts`: `/oauth/`
+  added to `navigateFallbackDenylist` so an installed PWA cannot serve the app shell instead.
+
+**Tests added** (all against real SQLite): `worker/test/oauth-scope.test.ts` (13),
+`worker/test/mail-actions.test.ts` (11), `worker/test/search.test.ts` (10), plus one new
+`tests/assets.test.ts` case for the bridge + assetlinks. Existing bearer fixtures were updated
+to the live Accounts response shape (they previously had no `client_id`/`scopes`, so they now
+prove the new check instead of bypassing it), and the two legacy bearer assertions now expect the
+single-account list.
+
+**Verification**
+
+| Command | Result |
+| --- | --- |
+| `npm test` | **223 pass, 0 fail** (worker 137, ui 19, d1 15, config 10, widget 9, startup 7, routing 10, assets 8, auth 5, language 3) |
+| `npm run check:sizes` | 104 files, none over 500 lines |
+| `npm run lint` | clean (web + worker) |
+| `npm run build` | built; 25 precache entries, 505.92 KiB |
+| `npx wrangler deploy --dry-run --config worker/wrangler.toml` | clean |
+
+**Not done / limits:** nothing is deployed. The Android app has no HTTP client yet, so the
+end-to-end device round trip is unverified; the contract is covered by Worker tests and by the
+live Accounts response shape. The assetlinks fingerprint is the one supplied in the brief — a
+release build signed with a different key needs its own fingerprint added.
+
 ## 2026-11-05 — Sending becomes provider-neutral (Resend is a choice, not a dependency)
 
 **Owner request:** we use Resend to send mail — can we be independent of it? What is needed, and

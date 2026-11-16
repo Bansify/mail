@@ -15,8 +15,10 @@
 //   PATCH  /api/mail/settings              { retentionLimit: 500 | 1500 | 0 }
 //   GET    /api/mail/messages?folder=inbox|starred|sent|drafts|trash&limit=&before=
 //   GET    /api/mail/messages/:id
-//   PATCH  /api/mail/messages/:id          { isRead?, isStarred?, moveToTrash? }
+//   PATCH  /api/mail/messages/:id          { isRead?, isStarred?, moveToTrash?, moveToInbox?, folder? }
 //   DELETE /api/mail/messages/:id          only for items already in Trash
+//   POST   /api/mail/messages/batch        { ids[], isRead? | isStarred? | moveToTrash? | moveToInbox? | deleteFromTrash? }
+//   DELETE /api/mail/trash                 empty this user's Trash
 //   POST   /api/mail/drafts                { id?, to, cc, bcc, subject, body }
 //   DELETE /api/mail/drafts/:id
 //   POST   /api/mail/send                  { to, cc?, bcc?, subject, body, draftId? }
@@ -38,6 +40,7 @@ import {
   identityPayload,
   loadSessionMeta,
 } from './sessionPayload';
+import { batchMessages, emptyTrash, parseBatch } from './mail-actions';
 import { handleInbound } from './inbound';
 import {
   enforceRetention,
@@ -280,6 +283,21 @@ async function route(request: Request, env: Env, config: Config): Promise<Respon
       folder: opts.folder,
       nextBefore: messages.length === opts.limit ? messages[messages.length - 1].receivedAt : null,
     });
+  }
+
+  // Bulk actions come BEFORE the /messages/:id matcher below, which would
+  // otherwise read "batch" as a message id and answer 400 bad_id.
+  if (path === '/api/mail/messages/batch' && method === 'POST') {
+    const session = await requireSession(request, config);
+    assertSafeWrite(request, config);
+    const input = parseBatch(await readJson(request));
+    return json(await batchMessages(await Db.from(env), session.username, input));
+  }
+
+  if (path === '/api/mail/trash' && method === 'DELETE') {
+    const session = await requireSession(request, config);
+    assertSafeWrite(request, config);
+    return json(await emptyTrash(await Db.from(env), session.username));
   }
 
   if (path === '/api/mail/send' && method === 'POST') {

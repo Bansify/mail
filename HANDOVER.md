@@ -2,7 +2,17 @@
 
 Last updated: 2026-10-24. Read this first if you are picking the work up.
 
-## Latest: sending is provider-neutral
+## Latest: native app backend (OAuth, search, batch, App Links)
+
+Bearer tokens are now checked properly: the token must belong to `gothwad-mail` **and** carry the
+`mail` scope, otherwise `403 insufficient_scope` (a token for another Gothwad app can no longer
+open a mailbox). Bearer sessions carry one account so unread metadata works. The list endpoint
+gained `q`/`unread`/`starred`/`hasAttachment`/`folder=all`, messages can be restored from Trash,
+and there are batch actions plus Empty Trash. `/oauth/callback` is a static bridge to
+`com.gothwad.mail:/oauth/callback`, with `.well-known/assetlinks.json` for App Links.
+Full contract: `docs/NATIVE_API.md`.
+
+## Previous: sending is provider-neutral
 
 `worker/src/send/` holds one adapter per outbound provider (`resend.ts`, `cloudflare.ts`) and
 `index.ts` chooses between them with `MAIL_SEND_PROVIDER` (`resend` | `cloudflare`; unset =
@@ -33,7 +43,7 @@ Full reasoning, contract and local measurements: `docs/STARTUP.md`.
 
 ```bash
 npm ci
-npm test        # 188 pass, 0 fail
+npm test        # 223 pass, 0 fail
 npm run lint    # web + worker typecheck
 npm run build   # 24 precache entries, 500.30 KiB
 node tools/check-file-sizes.mjs                                   # 93 files, none > 500 lines
