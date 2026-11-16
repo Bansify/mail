@@ -15,6 +15,20 @@ export default defineConfig(({mode}) => {
     plugins: [
       react(),
       tailwindcss(),
+      {
+        // Dev-only parity with the Pages rule in public/_redirects: without it the
+        // SPA fallback would answer /oauth/callback with the app shell, and a
+        // developer would never see the Android bridge locally.
+        name: 'oauth-callback-dev-route',
+        configureServer(server) {
+          server.middlewares.use((req, _res, next) => {
+            const url = req.url || '';
+            const match = /^\/oauth\/callback\/?(\?.*)?$/.exec(url);
+            if (match) req.url = `/oauth/callback/index.html${match[1] || ''}`;
+            next();
+          });
+        },
+      },
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: [
@@ -35,7 +49,9 @@ export default defineConfig(({mode}) => {
           // The app shell works offline; /api/* always goes to the network,
           // because mail bodies are private and must never be cached in the SW.
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//],
+          // The OAuth bridge must reach its own static page even when the PWA
+          // is installed: the SPA shell would swallow the app redirect.
+          navigateFallbackDenylist: [/^\/api\//, /^\/oauth\//],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,

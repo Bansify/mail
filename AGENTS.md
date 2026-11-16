@@ -9,7 +9,8 @@ Gothwad Mail is a webmail app for `username@APP_DOMAIN` addresses.
 - **Frontend**: Vite + React + Tailwind (`src/`). Calls same-origin `/api`. Has no secrets.
 - **Mail Worker** (`worker/`): Cloudflare Worker. Serves the REST API under `/api/*` and
   handles inbound email (Email Routing `email()` handler). It is the only thing that
-  talks to D1 (the `DB` binding) and Resend (API key).
+  talks to D1 (the `DB` binding) and one pluggable outbound provider
+  (`worker/src/send/`, docs/SENDING.md).
 - **Database**: **Cloudflare D1**, database **`mail`**, binding **`DB`** (`wrangler.toml`).
   Zero Supabase. The Worker bootstraps the schema itself on the first request
   (`worker/src/db.ts`); `sql/01_mail_schema.sql` is the documented copy and
@@ -21,7 +22,9 @@ Gothwad Mail is a webmail app for `username@APP_DOMAIN` addresses.
   database. Two URLs, two jobs: `AUTH_HUB_URL` is the base for **every server-side Accounts
   fetch** and must reach the Accounts Worker (its Custom Domain, `api.gothwadtech.com`);
   `AUTH_SIGNIN_URL` is for **browser links only** (the 401 `signinUrl` and `accountUrl`) and
-  falls back to `AUTH_HUB_URL` when unset.
+  falls back to `AUTH_HUB_URL` when unset. A bearer token is only accepted when Accounts issued
+  it to `gothwad-mail` **and** it carries the `mail` scope (otherwise 403 `insufficient_scope`);
+  see `docs/NATIVE_API.md`.
 
 Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup steps.
 
@@ -39,7 +42,7 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
    only. Only two Worker secrets exist: `ACCOUNTS_INTERNAL_TOKEN` and `RESEND_API_KEY`. They
    go in with `wrangler secret put` (or `npm run worker:secrets`) or the dashboard as type
    **Secret**. Never ask the user to paste a live key or password into chat.
-4. **Browser never calls D1 or Resend.** The browser only calls same-origin `/api/*`. D1 is
+4. **Browser never calls D1 or a mail provider.** The browser only calls same-origin `/api/*`. D1 is
    reached solely through the Worker's `DB` binding; there is no database URL or key to leak.
 5. **No demo data in the production build.** No fake names, no mock threads.
    The only data is what the Worker returns.

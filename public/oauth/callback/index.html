@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Opening Gothwad Mail…</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #1f2937;
+        --muted: #6b7280;
+        --accent: #0494f4;
+        --bg: #ffffff;
+        --card: #f5f7fa;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f3f4f6;
+          --muted: #9ca3af;
+          --bg: #212121;
+          --card: #2a2a2a;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+      .mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 18px;
+        background: rgba(4, 148, 244, 0.14);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      h1 {
+        font-size: 17px;
+        margin: 0 0 8px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin: 0 0 16px;
+      }
+      a.button {
+        display: block;
+        padding: 13px 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        margin-bottom: 10px;
+      }
+      a.secondary {
+        display: block;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: var(--card);
+        color: var(--fg);
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+      }
+      code {
+        font-size: 12px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+          <rect width="20" height="16" x="2" y="4" rx="3" />
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+      </div>
+      <h1>Opening Gothwad Mail</h1>
+      <p id="status">Handing this sign-in back to the Mail app…</p>
+      <a class="button" id="open-app" href="com.gothwad.mail:/oauth/callback">Open the Mail app</a>
+      <a class="secondary" id="open-web" href="/">Continue in the browser instead</a>
+    </main>
+
+    <script>
+      // =====================================================================
+      // OAuth callback bridge for the native app.
+      //
+      // The Android app signs in through Accounts, and Accounts sends the
+      // browser back here with `?code=...&state=...`. This page does NOT touch
+      // the code: it only moves the whole query string into the app's custom
+      // scheme, so the app can exchange it over its own PKCE verifier.
+      //
+      //  1. plain custom-scheme link (`com.gothwad.mail:/oauth/callback?...`)
+      //     works from any browser and any app that registered the scheme;
+      //  2. Chrome on Android also understands an `intent://` URL, which skips
+      //     the app chooser; it is tried first there.
+      //
+      // Nothing is stored, logged or sent anywhere: the query string stays in
+      // this page and in the app the user chose to open.
+      // =====================================================================
+      (function () {
+        var SEARCH = window.location.search || '';
+        var HASH = window.location.hash || '';
+        var TAIL = SEARCH + HASH;
+        var SCHEME = 'com.gothwad.mail:/oauth/callback';
+        var HTTPS = window.location.origin + '/oauth/callback';
+        var ua = navigator.userAgent || '';
+        var isAndroid = /Android/i.test(ua);
+
+        var appLink = SCHEME + TAIL;
+        var openApp = document.getElementById('open-app');
+        var status = document.getElementById('status');
+        openApp.href = appLink;
+
+        if (!TAIL || TAIL === '?') {
+          status.textContent =
+            'This page is where Gothwad Mail sign-in returns. Open the Mail app and sign in from there.';
+          return;
+        }
+
+        if (!isAndroid) {
+          status.textContent =
+            'Sign-in finished. Open Gothwad Mail on your Android phone to continue, or use the browser version below.';
+          return;
+        }
+
+        var intent =
+          'intent://mail.gothwadtech.com/oauth/callback' +
+          TAIL +
+          '#Intent;scheme=https;package=com.gothwad.mail;' +
+          'action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
+
+        // A visible fallback first: if the automatic hop is blocked, the button
+        // below still works. href stays on the plain scheme link on purpose.
+        status.textContent = 'Opening Gothwad Mail…';
+
+        var started = Date.now();
+        window.location.href = intent;
+
+        // If the app did not take over (no handler, blocked intent), say so
+        // instead of leaving a blank "Opening…" screen.
+        window.setTimeout(function () {
+          if (document.visibilityState === 'hidden' || window.location.href !== HTTPS + TAIL) return;
+          if (Date.now() - started < 1200) return;
+          status.textContent =
+            'The Mail app did not open. Tap the button below, or continue in the browser.';
+        }, 1600);
+      })();
+    </script>
+  </body>
+</html>

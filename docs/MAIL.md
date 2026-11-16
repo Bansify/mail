@@ -8,22 +8,31 @@ Browser ──► mail.gothwadtech.com
              └─ /api/*  ──► Mail Worker           worker/src/index.ts
                               ├─► Accounts: who is signed in?   AUTH_HUB_URL/api/auth/me
                               ├─► Cloudflare D1 (`mail` DB)     mail_settings + mail_messages
-                              └─► Resend (API key)              outbound mail
+                              └─► outbound provider             outbound mail
+                                  (Resend or Cloudflare, docs/SENDING.md)
 
 Internet mail ──► Email Routing (catch-all) ──► Mail Worker email()
                                                    ├─► Accounts username endpoint
                                                    └─► Cloudflare D1 (`mail` DB)
 ```
 
-- The **browser** never has a Resend key and never talks to D1. It only calls `/api/*` on the
-  same origin.
+- The **browser** never has a mail-provider key and never talks to D1. It only calls `/api/*`
+  on the same origin.
 - The **Mail Worker** is the only place that holds secrets. Only two exist:
-  `ACCOUNTS_INTERNAL_TOKEN` and `RESEND_API_KEY`.
+  `ACCOUNTS_INTERNAL_TOKEN` and the outbound provider key (`RESEND_API_KEY` today).
 - **Accounts** is the source of truth for who is signed in. Mail never stores passwords and
   never makes its own login. Mail has its own D1 database (`mail`) and never reads the
   Accounts database.
 - **Storage is 100% Cloudflare native**: Workers + D1. There is no Supabase project, no
   PostgREST call and no database key.
+
+### The native app (OAuth + App Links)
+
+`GothwadTech/mailapp` (package `com.gothwad.mail`) is a public PKCE client registered in
+Accounts as `gothwad-mail` with the scopes `profile`, `email`, `offline_access` and `mail`. It
+calls this API with `Authorization: Bearer <access_token>`; cookie requests never mix with it.
+Sign-in returns to `/oauth/callback`, a static bridge that forwards the untouched query to the
+app's own scheme. Details: [NATIVE_API.md](NATIVE_API.md).
 
 ### The two Accounts URLs
 
@@ -56,9 +65,13 @@ public config (`wrangler.toml` `[vars]`), not secrets.
 4. Accounts can rotate the refresh token on `/auth/me`. It then sends new `gothwad_*`
    cookies. The Worker passes those cookies on to the browser. If it did not, the user would
    be signed out of Accounts everywhere.
-5. Bearer tokens (`Authorization: Bearer ...`) are checked with
-   `GET {AUTH_HUB_URL}/api/oauth/userinfo`. This is for future clients. The web app does not
-   use it.
+5. Bearer tokens (`Authorization: Bearer ...`) are for the native Android app
+   (`GothwadTech/mailapp`). They are checked with
+   `GET {AUTH_HUB_URL}/api/oauth/userinfo`, and the answer must belong to **this** app:
+   `client_id` or `aud` must be `gothwad-mail`, and the granted scopes must include `mail`.
+   A token minted for another Gothwad app (Store, Tube) or a token without `mail` is refused
+   with **403 `insufficient_scope`** — not a 401, because the token is valid and the client must
+   not throw it away. The web app does not use bearer tokens at all.
 6. **A 401 from Mail may only ever mean "Accounts says this browser is signed out".** Any
    other answer Mail cannot read is a **503** with its own error code (table below), so a
    broken Accounts handoff can never be mistaken for a signed-out user and bounce the browser
@@ -203,10 +216,12 @@ All JSON. Everything except `/api/health` needs a signed-in session.
 | GET | `/api/session` | Combined response, kept for existing consumers: identity + `meta: true`, `unread`, `limits`. The web app no longer uses it on boot. |
 | GET | `/api/mail/settings` | `{ retentionLimit, storageUsedBytes, storageQuotaBytes, totalMessages, starredMessages }`. |
 | PATCH | `/api/mail/settings` | Body: `{ retentionLimit: 500 \| 1500 \| 0 }`. Saves, runs retention immediately, returns the updated stats plus `cleanup: { trashPurged, trimmed }`. |
-| GET | `/api/mail/messages?folder=inbox\|starred\|sent\|drafts\|trash&limit=&before=` | One page, newest first (max 100). Returns `nextBefore` for "Load more". |
+| GET | `/api/mail/messages?folder=inbox\|starred\|sent\|drafts\|trash\|all&limit=&before=&q=&unread=&starred=&hasAttachment=` | One page, newest first (max 100). Returns `nextBefore` for "Load more". `all` (and a bare `q`/filter with no folder) spans inbox + sent + drafts and never Trash. See "Search and filters" below. |
 | GET | `/api/mail/messages/:id` | One message with its decompressed body. Sends an `ETag` and answers **304** to a matching `If-None-Match`, so re-opening a seen mail skips the gzip work and the download. |
-| PATCH | `/api/mail/messages/:id` | Body: `{ isRead?, isStarred?, moveToTrash? }`. |
+| PATCH | `/api/mail/messages/:id` | Body: `{ isRead?, isStarred?, moveToTrash?, moveToInbox?, folder? }`. `moveToInbox: true` (or `folder: "inbox"`) restores a trashed message — the Undo a swipe-to-trash needs. `folder` may only be `"inbox"` or `"trash"`. |
 | DELETE | `/api/mail/messages/:id` | Permanent delete. Only for items already in Trash. |
+| POST | `/api/mail/messages/batch` | Bulk action: `{ ids: string[], isRead? \| isStarred? \| moveToTrash? \| moveToInbox? \| deleteFromTrash? }`. 1..100 ids, one statement, scoped to the caller. Returns `{ ok: true, updated }`. |
+| DELETE | `/api/mail/trash` | Empties **this user's** Trash: `{ ok: true, deleted }`. |
 | POST | `/api/mail/drafts` | Create or update a draft: `{ id?, to, cc, bcc, subject, body }`. |
 | DELETE | `/api/mail/drafts/:id` | Delete a draft. |
 | GET | `/api/mail/accounts` | Signed-in accounts for the switcher: `{ activeId, accounts[], unread{} }`. Empty + `unsupported: true` when Accounts has no multi-account API yet. |
@@ -215,6 +230,13 @@ All JSON. Everything except `/api/health` needs a signed-in session.
 | POST | `/api/mail/accounts/signout-all` | Signs every slot out (`Accounts /auth/signout`). The next `/api/session` answers 401, which is the one place that decides where the browser goes. |
 | GET | `/api/mail/accounts/add` | 302 to Accounts' sign-in in append mode (`?choose=1&add=1`). |
 | POST | `/api/mail/send` | Send: `{ to, cc?, bcc?, subject, body, draftId? }`. Returns 201 with `id`, `saved`, `remainingToday`. |
+
+### Search, filters and bulk actions
+
+The list endpoint also does server-side search (`q`) and filtering (`unread`, `starred`,
+`hasAttachment`, `folder=all`), and the native client has batch actions, restore-from-Trash and
+Empty Trash. Those requests are documented in [NATIVE_API.md](NATIVE_API.md#mailbox-operations),
+together with the OAuth rules. Every one of them is scoped to the signed-in username.
 
 Errors use one shape: `{ error, message }`. Malformed ids return 400, not found returns 404,
 and internal details are never shown outside development. A D1 failure returns 503
@@ -226,7 +248,8 @@ A write (POST/PATCH/DELETE) that uses cookies must:
 - come from an **allowed origin** (`MAIL_URL`, plus `ALLOWED_ORIGINS` if set). Otherwise **403**.
 - send `Content-Type: application/json`. Otherwise **415**.
 
-Bearer-token requests skip the origin check, because they do not use cookies.
+Bearer-token requests skip the origin check, because they do not use cookies. The Android app
+therefore sends no `Origin` header, and its writes are authorized by the token alone.
 
 ## Multiple accounts (Google-style switcher)
 
@@ -381,11 +404,14 @@ drives the same widget inside jsdom (the test installs the stand-in as
 
 1. Validate: recipients (max 25), subject, body (max 100,000 characters). Strip and check
    the addresses.
-2. If `RESEND_API_KEY` is missing, return **503**.
+2. If no outbound provider is configured, return **503 `sending_not_configured`**. The provider
+   is pluggable (`worker/src/send/`, chosen by `MAIL_SEND_PROVIDER`) — see
+   [SENDING.md](SENDING.md).
 3. Check the daily cap: sent rows today for this user, against `DAILY_SEND_LIMIT` (default
    30). Over the cap returns **429**.
-4. Send through Resend from `username@APP_DOMAIN`. If Resend rate-limits us, return
-   **429** with `provider_rate_limited`. If Resend is unreachable, return **502**.
+4. Send from `username@APP_DOMAIN` through the configured provider. A provider rate limit is
+   **429** `provider_rate_limited`; an unreachable or rejecting provider is **502**
+   `send_failed`.
 5. Insert a copy in `sent` (gzip body + `size_bytes`). If that insert fails, the response
    still says the mail was sent (`saved: false`) and the failure is logged.
 6. If a `draftId` was given, delete that draft.

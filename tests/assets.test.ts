@@ -67,6 +67,7 @@ test('exactly one web manifest is emitted, and index.html links it', () => {
 test('the service worker never caches /api', () => {
   const vite = read('vite.config.ts');
   assert.match(vite, /navigateFallbackDenylist:\s*\[\/\^\\\/api\\\/\//, 'API paths bypass the SPA fallback');
+  assert.match(vite, /\/\^\\\/oauth\\\/\//, 'the OAuth bridge page bypasses the SPA fallback too');
   // Any runtimeCaching rule that matched /api would keep mail bodies on disk.
   const runtime = vite.slice(vite.indexOf('runtimeCaching:'));
   const rules = runtime.slice(0, runtime.indexOf('devOptions'));
@@ -79,6 +80,33 @@ test('Cloudflare Pages rewrites deep paths to the SPA shell', () => {
   assert.match(redirects, /^\/u\/\* {2,}\/index\.html {2,}200$/m);
   assert.match(redirects, /^\/mail\/u\/\* {2,}\/index\.html {2,}200$/m);
   assert.match(redirects, /^\/\* {2,}\/index\.html {2,}200$/m);
+});
+
+test('the Android OAuth bridge and its app-link file are shipped', () => {
+  const bridge = read('public/oauth/callback/index.html');
+  // The bridge must hand the untouched query back to the app's own scheme.
+  assert.match(bridge, /com\.gothwad\.mail:\/oauth\/callback/);
+  assert.match(bridge, /package=com\.gothwad\.mail/, 'the intent:// fallback names the package');
+  assert.equal(bridge.includes('oauth/token'), false, 'the bridge never exchanges the code itself');
+
+  const links = JSON.parse(read('public/.well-known/assetlinks.json')) as Array<{
+    relation: string[];
+    target: { namespace: string; package_name: string; sha256_cert_fingerprints: string[] };
+  }>;
+  assert.equal(links.length, 1);
+  assert.equal(links[0].target.package_name, 'com.gothwad.mail');
+  assert.equal(links[0].target.namespace, 'android_app');
+  assert.match(links[0].target.sha256_cert_fingerprints[0], /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+
+  // Both paths must be static hits, not the SPA catch-all.
+  const redirects = read('public/_redirects');
+  assert.match(redirects, /^\/oauth\/callback {2,}\/oauth\/callback\/index\.html {2,}200$/m);
+
+  // The dev server must mirror that rewrite, or the bridge is only testable in
+  // production.
+  const vite = read('vite.config.ts');
+  assert.match(vite, /oauth-callback-dev-route/);
+  assert.match(vite, /\/oauth\\\/callback\\\/\?\(\\\?\.\*\)\?\$\//);
 });
 
 test('HTML and JS are never cached stale after a deploy', () => {

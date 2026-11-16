@@ -117,8 +117,11 @@ test('DELETE is only allowed for items already in Trash', async () => {
 });
 
 test('PATCH rejects fields the client may not change', () => {
-  assert.throws(() => parsePatch({ folder: 'inbox' }), /cannot be changed/);
   assert.throws(() => parsePatch({ to_username: 'bob' }), /cannot be changed/);
   assert.throws(() => parsePatch({ moveToTrash: false }), /moveToTrash/);
   assert.throws(() => parsePatch({}), /Nothing to change/);
+  // `folder` is the restore spelling, but only for the two real targets.
+  assert.deepEqual(parsePatch({ folder: 'inbox' }), { moveToInbox: true });
+  assert.deepEqual(parsePatch({ folder: 'trash' }), { moveToTrash: true });
+  assert.throws(() => parsePatch({ folder: 'sent' }), /inbox.*trash/);
 });

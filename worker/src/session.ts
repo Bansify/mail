@@ -7,8 +7,11 @@
 //  1. Cookie path (normal web use): forward the browser's Cookie header to
 //     GET {AUTH_HUB_URL}/api/auth/me. Accounts sets the cookies on
 //     .gothwadtech.com, so they reach this Worker on mail.gothwadtech.com.
-//  2. Bearer path (future native/iframe clients): GET
-//     {AUTH_HUB_URL}/api/oauth/userinfo with the access token.
+//  2. Bearer path (native clients, e.g. the Android app): GET
+//     {AUTH_HUB_URL}/api/oauth/userinfo with the access token. The token must
+//     have been minted for THIS app (client_id/aud = `gothwad-mail`) AND carry
+//     the `mail` scope. A token for another Gothwad app is a 403
+//     `insufficient_scope`, never a session.
 //
 // AUTH_HUB_URL must be a host that reaches the Accounts Worker for a
 // server-to-server call (Accounts' Custom Domain, e.g. api.gothwadtech.com).
@@ -35,6 +38,12 @@ import { parseAccounts, pickAccount, type PublicAccount } from './accountList';
 export const AUTH_UNAVAILABLE = 'auth_unavailable';
 export const ACCOUNTS_UNEXPECTED_RESPONSE = 'accounts_unexpected_response';
 export const ACCOUNTS_USER_INVALID = 'accounts_user_invalid';
+export const INSUFFICIENT_SCOPE = 'insufficient_scope';
+
+/** The OAuth client this Worker serves (Gothwad Accounts `ecosystem_apps`). */
+export const MAIL_OAUTH_CLIENT_ID = 'gothwad-mail';
+/** The scope that allows reading and sending a mailbox through this API. */
+export const MAIL_OAUTH_SCOPE = 'mail';
 
 export interface Session {
   username: string;
@@ -213,6 +222,62 @@ async function resolveCookie(request: Request, cookie: string, config: Config): 
   };
 }
 
+interface OAuthUserInfoBody {
+  client_id?: unknown;
+  aud?: unknown;
+  scopes?: unknown;
+  scope?: unknown;
+  preferred_username?: unknown;
+  name?: unknown;
+  given_name?: unknown;
+  family_name?: unknown;
+  picture?: unknown;
+}
+
+/**
+ * Granted scopes from Accounts' `/api/oauth/userinfo`.
+ *
+ * Accounts sends both `scopes` (array) and `scope` (space-separated string). We
+ * accept either, but only entries that are plain strings: a malformed value must
+ * not be able to look like a grant.
+ */
+function grantedScopes(body: OAuthUserInfoBody): string[] {
+  if (Array.isArray(body.scopes)) {
+    return body.scopes.filter((s): s is string => typeof s === 'string');
+  }
+  if (typeof body.scope === 'string') {
+    return body.scope.trim().split(/\s+/).filter(Boolean);
+  }
+  return [];
+}
+
+/**
+ * Rejects a token that is valid for Accounts but was not issued to Gothwad Mail.
+ *
+ * WHY this is not a normal 401: the token IS valid, it simply is not allowed
+ * here. A 401 would make the native client throw the token away and ask the user
+ * to sign in again, in a loop. 403 `insufficient_scope` is the OAuth answer, and
+ * the app can show "this account was not granted Mail access".
+ */
+function assertMailToken(body: OAuthUserInfoBody, res: Response): void {
+  const clientId = typeof body.client_id === 'string' ? body.client_id.trim() : '';
+  const audience = typeof body.aud === 'string' ? body.aud.trim() : '';
+  const scopes = grantedScopes(body);
+
+  if (clientId !== MAIL_OAUTH_CLIENT_ID && audience !== MAIL_OAUTH_CLIENT_ID) {
+    warnUpstreamFailure(INSUFFICIENT_SCOPE, res);
+    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Gothwad Mail.', {
+      requiredClient: MAIL_OAUTH_CLIENT_ID,
+    });
+  }
+  if (!scopes.includes(MAIL_OAUTH_SCOPE)) {
+    warnUpstreamFailure(INSUFFICIENT_SCOPE, res);
+    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Gothwad Mail.', {
+      requiredScope: MAIL_OAUTH_SCOPE,
+    });
+  }
+}
+
 async function resolveBearer(authHeader: string, config: Config): Promise<Session | null> {
   const res = await upstream(`${config.authHubUrl}/api/oauth/userinfo`, {
     authorization: authHeader,
@@ -223,31 +288,58 @@ async function resolveBearer(authHeader: string, config: Config): Promise<Sessio
   if (isSignedOut(res.status)) return null;
   assertAccountsUsable(res);
 
-  const body = (await res.json().catch(() => null)) as {
-    preferred_username?: unknown;
-    name?: string;
-    picture?: unknown;
-  } | null;
+  const body = (await res.json().catch(() => null)) as OAuthUserInfoBody | null;
   if (!body || typeof body !== 'object') {
     throw unexpectedResponseError(res);
   }
+  // Audience + scope BEFORE anything else: a token minted for another app must
+  // never reach a mailbox query, even for its own user.
+  assertMailToken(body, res);
+
   const username = normalizeUsername(body.preferred_username);
   if (!username) {
     warnUpstreamFailure(ACCOUNTS_USER_INVALID, res);
     throw new HttpError(503, ACCOUNTS_USER_INVALID, ACCOUNTS_USER_INVALID_MESSAGE);
   }
+
+  // Accounts returns given/family name with the `profile` scope; fall back to
+  // splitting `name` so the payload stays the same shape for every client.
   const fullName = typeof body.name === 'string' ? body.name.trim() : '';
+  const given = typeof body.given_name === 'string' ? body.given_name.trim() : '';
+  const family = typeof body.family_name === 'string' ? body.family_name.trim() : '';
+  const firstName = given || fullName.split(/\s+/)[0] || '';
+  const lastName = family || fullName.split(/\s+/).slice(1).join(' ');
+  const name = `${firstName} ${lastName}`.trim() || null;
+  const email = deriveEmail(username, config.appDomain);
+  const avatarUrl = textOrNull(body.picture);
+  const accountUrl = `${config.authSigninUrl}/me`;
+
   return {
     username,
-    email: deriveEmail(username, config.appDomain),
-    name: fullName || null,
-    firstName: fullName.split(/\s+/)[0] ?? '',
-    lastName: fullName.split(/\s+/).slice(1).join(' '),
-    avatarUrl: textOrNull(body.picture),
+    email,
+    name,
+    firstName,
+    lastName,
+    avatarUrl,
     authuser: 0,
     activeId: null,
-    accounts: [],
-    accountUrl: `${config.authSigninUrl}/me`,
+    // A bearer token names one user, so the "account list" is that single
+    // account. loadSessionMeta() therefore computes unread for exactly it.
+    accounts: [
+      {
+        id: 'bearer',
+        authuser: 0,
+        username,
+        name,
+        firstName,
+        lastName,
+        email,
+        avatarUrl,
+        accountUrl,
+        lastUsedAt: null,
+      },
+    ],
+    accountUrl,
     source: 'bearer',
   };
 }

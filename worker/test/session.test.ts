@@ -12,6 +12,8 @@ import { Db } from '../src/db.ts';
 import {
   h,
   MAIL_ORIGIN,
+  MAIL_TOKEN,
+  oauthUserInfo,
   req,
   authed,
   writeInit,
@@ -209,14 +211,16 @@ test('bearer token path uses userinfo on AUTH_HUB_URL and derives the email', as
   const custom = splitEnv();
   h.stub = hubOnlyStub((s) =>
     s.url.pathname === '/api/oauth/userinfo'
-      ? Response.json({ sub: '1', preferred_username: 'alice', name: 'Alice' })
+      ? Response.json(oauthUserInfo())
       : new Response('x', { status: 599 })
   );
-  const res = await worker.fetch(req('/api/session', { headers: { authorization: 'Bearer goodtoken' } }), custom);
+  const res = await worker.fetch(req('/api/session', { headers: { authorization: MAIL_TOKEN } }), custom);
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.user.email, 'alice@gothwadtech.com');
-  assert.equal(body.user.name, 'Alice');
+  assert.equal(body.user.name, 'Alice Sharma');
+  assert.equal(body.user.firstName, 'Alice', 'given_name is used when present');
+  assert.equal(body.user.lastName, 'Sharma');
   assert.equal(h.seen.find((s) => s.url.pathname === '/api/oauth/userinfo')?.url.origin, 'https://api.test');
 });
 

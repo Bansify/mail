@@ -1,3 +1,5 @@
+/oauth/callback    /oauth/callback/index.html    200
+/oauth/callback/   /oauth/callback/index.html    200
 /u/*    /index.html    200
 /mail/u/*    /index.html    200
 /*    /index.html    200

@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/index.ts';
 import { Db } from '../src/db.ts';
-import { h, MAIL_ORIGIN, authed, req, seedMessage, makeEnv, type Stub } from './helpers.ts';
+import { h, MAIL_ORIGIN, MAIL_TOKEN, authed, oauthUserInfo, req, seedMessage, makeEnv, type Stub } from './helpers.ts';
 
 const SLOTS = [
   { id: 'a', authuser: 0, username: 'alice', firstName: 'Alice', lastName: 'Sharma' },
@@ -158,18 +158,20 @@ test('an out-of-range selector is ignored instead of being forwarded', async () 
   assert.equal(upstream?.headers.get('x-gothwad-authuser'), null);
 });
 
-test('bearer sessions still work, with no account list', async () => {
+test('bearer sessions still work, with a single-account list', async () => {
   h.stub = (s) => {
-    if (s.url.pathname === '/api/oauth/userinfo') {
-      return Response.json({ sub: '1', preferred_username: 'alice', name: 'Alice' });
-    }
+    if (s.url.pathname === '/api/oauth/userinfo') return Response.json(oauthUserInfo());
     return new Response('x', { status: 599 });
   };
-  const res = await worker.fetch(req('/api/session', { headers: { authorization: 'Bearer goodtoken' } }), h.env);
+  const res = await worker.fetch(req('/api/session', { headers: { authorization: MAIL_TOKEN } }), h.env);
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.authuser, 0);
-  assert.deepEqual(body.accounts, []);
+  // A token names one user, so the switcher list is that account only.
+  assert.deepEqual(
+    body.accounts.map((a: { id: string; username: string; authuser: number }) => [a.id, a.username, a.authuser]),
+    [['bearer', 'alice', 0]]
+  );
   assert.equal(body.accountUrl, 'https://accounts.test/me');
 });
 

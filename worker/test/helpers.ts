@@ -26,6 +26,8 @@ export const ORIGINAL_FETCH = globalThis.fetch;
 export const MAIL_ORIGIN = 'https://mail.test';
 export const ACCOUNTS_TOKEN = 'mail_internal_TEST_ONLY';
 export const RESEND_KEY = 're_TEST_ONLY';
+/** Bearer token the stubs treat as a valid Gothwad Mail OAuth access token. */
+export const MAIL_TOKEN = 'Bearer goodtoken';
 
 let seen: Seen[] = [];
 let env: Env;
@@ -105,6 +107,30 @@ export function writeInit(method: string, body: unknown): RequestInit {
   };
 }
 
+/**
+ * The `/api/oauth/userinfo` body a Gothwad Mail token really produces (see
+ * GothwadTech/accounts `cloudflare-worker/src/routes/oauth.ts` and migration
+ * 0014): `client_id`/`aud` name the app, and `scopes` carries the granted set.
+ * Overrides let a test mint a token for another app or drop a scope.
+ */
+export function oauthUserInfo(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    sub: '1',
+    client_id: 'gothwad-mail',
+    aud: 'gothwad-mail',
+    scope: 'email mail offline_access profile',
+    scopes: ['email', 'mail', 'offline_access', 'profile'],
+    preferred_username: 'alice',
+    name: 'Alice Sharma',
+    given_name: 'Alice',
+    family_name: 'Sharma',
+    email: 'alice@gothwadtech.com',
+    email_verified: true,
+    picture: null,
+    ...overrides,
+  };
+}
+
 /** Accounts stub that treats the cookie "gothwad_at=good" as user alice. */
 export function accountsStub(s: Seen): Response | null {
   if (s.url.origin !== 'https://accounts.test') return null;
@@ -118,9 +144,7 @@ export function accountsStub(s: Seen): Response | null {
     return Response.json({ authenticated: false }, { status: 401 });
   }
   if (s.url.pathname === '/api/oauth/userinfo') {
-    if (s.headers.get('authorization') === 'Bearer goodtoken') {
-      return Response.json({ sub: '1', preferred_username: 'alice', name: 'Alice' });
-    }
+    if (s.headers.get('authorization') === MAIL_TOKEN) return Response.json(oauthUserInfo());
     return Response.json({ error: 'invalid_token' }, { status: 401 });
   }
   if (s.url.pathname.startsWith('/api/internal/usernames/')) {

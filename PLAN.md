@@ -29,6 +29,30 @@
 | PWA | **Done** | Manifest `display_override`/shortcuts, offline app shell, fonts + images cached, `/api/*` never cached. |
 | Accessibility | **Done** | `prefers-reduced-motion`, visible focus, 44px+ targets, unread announced as text. |
 
+## Phase 2.9 — Native app backend
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Bearer audience + `mail` scope | **Done** | `client_id`/`aud` must be `gothwad-mail` and the scopes must include `mail`; otherwise 403 `insufficient_scope` (never a 401). See `docs/NATIVE_API.md`. |
+| Bearer session shape | **Done** | One `PublicAccount` (`id: "bearer"`), so unread metadata works for token callers on `/api/session` and `/api/session/meta`. |
+| Search + filters | **Done** | `q`, `unread`, `starred`, `hasAttachment`, `folder=all`; folder optional when searching; `limit`/`before` unchanged. |
+| Restore from Trash (Undo) | **Done** | `moveToInbox` / `folder: "inbox"` on `PATCH /api/mail/messages/:id`. |
+| Batch actions + Empty Trash | **Done** | `POST /api/mail/messages/batch`, `DELETE /api/mail/trash`, both scoped to the session user. |
+| App Links bridge | **Done** | `public/oauth/callback/index.html` + `.well-known/assetlinks.json`, pinned ahead of the SPA rewrite and excluded from the SW navigation fallback. |
+| Android app wiring | **Open** | `GothwadTech/mailapp` has no HTTP client yet; this repo provides the contract and its tests. |
+| Deploy | **Pending** | Worker + Pages. |
+
+## Phase 2.8 — Provider-neutral sending
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Send adapter | **Done** | `worker/src/send/` with `resend.ts` + `cloudflare.ts`; `MAIL_SEND_PROVIDER` selects, unset auto-detects. Route unchanged. |
+| Error contract | **Done** | Same `sending_not_configured` / `provider_rate_limited` / `send_failed` codes for every provider; provider codes are never echoed. |
+| Optional Cloudflare Email Sending | **Ready, off** | Binding documented and commented in `wrangler.toml`. Needs Workers Paid ($5/mo), so it is the owner's call; docs/SENDING.md has the steps. |
+| Visibility | **Done** | `/api/health` → `send.provider`, `configured.emailBinding`; send response includes `provider`. |
+| Bounces/complaints | **Open** | No webhook/queue consumer yet; provider-specific. |
+| Deploy | **Pending** | Local only. |
+
 ## Phase 2.7 — Startup: identity first (this branch)
 
 | Area | Status | Notes |
