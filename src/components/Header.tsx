@@ -241,7 +241,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </svg>
             </div>
             <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white leading-none">
-              Gothwad<span className="text-[#0494f4] font-semibold ml-1">Mail</span>
+              bansify
             </span>
           </div>
         </div>

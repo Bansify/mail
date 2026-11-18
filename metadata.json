@@ -1,5 +1,5 @@
 {
-  "name": "Gothwad Mail",
+  "name": "bansify",
   "description": "Fast, modern desktop and mobile webmail for your Gothwad address, signed in with Gothwad Accounts.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

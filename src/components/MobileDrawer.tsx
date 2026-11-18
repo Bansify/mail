@@ -60,7 +60,7 @@ export const MobileDrawer: React.FC = () => {
               </svg>
             </div>
             <span className="text-base font-bold text-neutral-900 dark:text-white">
-              Gothwad<span className="text-[#0494f4] font-semibold ml-1">Mail</span>
+              bansify
             </span>
           </div>
           <button
