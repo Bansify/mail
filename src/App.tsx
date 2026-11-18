@@ -232,7 +232,7 @@ export default function App() {
     if (accountsWebOrigin) preloadAccountWidget(accountsWebOrigin);
   }, [accountsWebOrigin]);
 
-  if (state.status === 'loading') return <Screen title="Checking your Gothwad account…" />;
+  if (state.status === 'loading') return <Screen title="Checking your Bansify account…" />;
   if (state.status === 'redirecting') return <Screen title="Redirecting you to sign in…" />;
   if (state.status === 'error') {
     return <Screen title="Can't open Bansify Email" detail={state.message} onRetry={() => void retry()} />;

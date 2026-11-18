@@ -28,7 +28,7 @@ import {
 } from './ui-harness.tsx';
 
 /** The full-screen gate the old startup showed while it waited for D1. */
-const GATE = 'Loading your Gothwad Account';
+const GATE = 'Loading your Bansify Account';
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -42,7 +42,7 @@ const metaBody = (authuser: number, sendRemainingToday: number) => ({
 });
 
 const authuserOf = (init?: RequestInit): number =>
-  Number(new Headers(init?.headers).get('x-gothwad-authuser') ?? '-1');
+  Number(new Headers(init?.headers).get('x-bansify-authuser') ?? '-1');
 
 const isMeta = (url: string): boolean => url.startsWith('/api/session/meta');
 
@@ -140,7 +140,7 @@ test('a late answer for the previous account can never paint the new one', async
     accountTrigger()!.click();
   });
   await waitFor(() => isWidgetSheetOpen(), 'the shared widget opened');
-  assert.equal(await clickInSheet((label) => label.includes('bob@gothwadtech.com')), true, 'bob is selectable');
+  assert.equal(await clickInSheet((label) => label.includes('bob@bansifytech.com')), true, 'bob is selectable');
   await waitFor(() => window.location.pathname === '/u/1/', 'the tab moved to bob');
   await waitFor(() => text().includes('12 of 30 sends left today'), "bob's quota is painted");
   assert.equal(widget.isOpen(), false);

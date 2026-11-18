@@ -1,5 +1,5 @@
 // =============================================================================
-// Cloudflare D1 access for Gothwad Mail. Zero Supabase, zero PostgREST.
+// Cloudflare D1 access for Bansify Mail. Zero Supabase, zero PostgREST.
 //
 // WHY THIS FILE LOOKS LIKE THIS
 //   Cloudflare D1 is SQLite. A Worker gets it as `env.DB` (wrangler.toml

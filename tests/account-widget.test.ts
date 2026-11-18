@@ -41,7 +41,7 @@ const accounts = [
     name: 'Alice Sharma',
     firstName: 'Alice',
     lastName: 'Sharma',
-    email: 'alice@gothwadtech.com',
+    email: 'alice@bansifytech.com',
     avatarUrl: 'https://cdn.test/alice.png',
     accountUrl: 'https://accounts.test/u/0/me',
     lastUsedAt: null,
@@ -53,7 +53,7 @@ const accounts = [
     name: 'Bob Verma',
     firstName: 'Bob',
     lastName: 'Verma',
-    email: 'bob@gothwadtech.com',
+    email: 'bob@bansifytech.com',
     avatarUrl: null,
     accountUrl: 'https://accounts.test/u/1/me',
     lastUsedAt: null,
@@ -67,7 +67,7 @@ function args(overrides: Partial<BuildMenuArgs> = {}): BuildMenuArgs {
       name: 'Alice Sharma',
       firstName: 'Alice',
       lastName: 'Sharma',
-      email: 'alice@gothwadtech.com',
+      email: 'alice@bansifytech.com',
       avatarUrl: 'https://cdn.test/alice.png',
     },
     accounts,
@@ -110,7 +110,7 @@ test('opts match the widget contract', () => {
   assert.equal('onManageAccount' in opts, false);
   assert.equal(opts.manageAccountHref, 'https://accounts.test/u/0/me');
   assert.equal(opts.accountsWebOrigin, 'https://accounts.test', 'trailing slash trimmed');
-  assert.equal(opts.ecosystemName, 'Gothwad');
+  assert.equal(opts.ecosystemName, 'Bansify');
   assert.equal(typeof opts.onSwitchAccount, 'function');
 });
 

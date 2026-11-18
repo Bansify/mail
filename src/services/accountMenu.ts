@@ -112,7 +112,7 @@ export function buildAccountMenu(args: BuildMenuArgs): AccountMenuInput {
     // Only set when Mail knows the origin: the widget otherwise infers it from
     // its own script URL, which is the same host.
     ...(origin ? { accountsWebOrigin: origin } : {}),
-    ecosystemName: 'Gothwad',
+    ecosystemName: 'Bansify',
     extraActions: args.extras ?? [],
     onSwitchAccount: args.handlers.onSwitchAccount,
     onSignOutAccount: args.handlers.onSignOutAccount,

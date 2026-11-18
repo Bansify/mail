@@ -1,10 +1,10 @@
 // =============================================================================
-// Loader for the shared Gothwad account widget (hosted once by Accounts).
+// Loader for the shared Bansify account widget (hosted once by Accounts).
 //
 // The same Google-style sheet is used by Accounts, Mail, Store and Console, so
 // Mail must not ship a second, slightly different menu. Accounts publishes it at
 // `${accountsWebOrigin}/widget/account-menu.js`; that module defines
-// `window.GothwadAccountMenu` with `open / update / close / isOpen`.
+// `window.BansifyAccountMenu` with `open / update / close / isOpen`.
 //
 // Design notes:
 //   - the origin comes from the session (`accountsWebOrigin`), never from a
@@ -41,7 +41,7 @@ let lastError: string | null = null;
  * itself; in a test harness (jsdom) the page globals live on `globalThis.window`,
  * so both are checked and the page one wins.
  */
-type WidgetGlobal = { GothwadAccountMenu?: AccountWidget; window?: WidgetGlobal };
+type WidgetGlobal = { BansifyAccountMenu?: AccountWidget; window?: WidgetGlobal };
 const menuGlobal = (): WidgetGlobal => (globalThis as WidgetGlobal).window ?? (globalThis as WidgetGlobal);
 
 /** Trims trailing slashes; returns '' for an unusable value. */
@@ -71,7 +71,7 @@ export function accountWidgetUrl(accountsWebOrigin: string): string {
 /** The widget module, only if it has already loaded (never triggers a fetch). */
 export function loadedAccountWidget(): AccountWidget | null {
   if (loaded) return loaded;
-  const fromWindow = menuGlobal().GothwadAccountMenu;
+  const fromWindow = menuGlobal().BansifyAccountMenu;
   return fromWindow && typeof fromWindow === 'object' ? fromWindow : null;
 }
 
@@ -83,8 +83,8 @@ export function accountWidgetError(): string | null {
 /** True when the widget namespace (or window global) looks usable. */
 function usable(mod: unknown): AccountWidget | null {
   const candidate =
-    (mod as { GothwadAccountMenu?: AccountWidget } | null)?.GothwadAccountMenu ??
-    menuGlobal().GothwadAccountMenu;
+    (mod as { BansifyAccountMenu?: AccountWidget } | null)?.BansifyAccountMenu ??
+    menuGlobal().BansifyAccountMenu;
   return candidate && typeof candidate === 'object' ? candidate : null;
 }
 
@@ -199,8 +199,8 @@ export function resetAccountWidgetForTests(): void {
   loaded = null;
   inFlight = null;
   lastError = null;
-  delete menuGlobal().GothwadAccountMenu;
-  delete (globalThis as WidgetGlobal).GothwadAccountMenu;
+  delete menuGlobal().BansifyAccountMenu;
+  delete (globalThis as WidgetGlobal).BansifyAccountMenu;
 }
 
 /** Test-only: pretend the module is already cached. */

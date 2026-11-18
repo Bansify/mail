@@ -125,7 +125,7 @@ export interface MailContextType {
   /** Accounts web origin from the session; '' if the Worker did not send one. */
   accountsWebOrigin: string;
 
-  // Account switcher (multiple signed-in Gothwad accounts)
+  // Account switcher (multiple signed-in Bansify accounts)
   accounts: AccountSummary[];
   activeAccountId: string | null;
   /** username -> unread count. `{}` until the deferred meta call answers. */

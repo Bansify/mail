@@ -1,10 +1,10 @@
-# AGENTS.md — rules for working on Gothwad Mail
+# AGENTS.md — rules for working on Bansify Mail
 
 Read this before you change anything. Keep it up to date. Do not delete it.
 
 ## What this repo is
 
-Gothwad Mail is a webmail app for `username@APP_DOMAIN` addresses.
+Bansify Mail is a webmail app for `username@APP_DOMAIN` addresses.
 
 - **Frontend**: Vite + React + Tailwind (`src/`). Calls same-origin `/api`. Has no secrets.
 - **Mail Worker** (`worker/`): Cloudflare Worker. Serves the REST API under `/api/*` and
@@ -16,28 +16,28 @@ Gothwad Mail is a webmail app for `username@APP_DOMAIN` addresses.
   (`worker/src/db.ts`); `sql/01_mail_schema.sql` is the documented copy and
   `sql/00_d1_console_bootstrap.sql` the comment-free console copy. Never put `PRAGMA` in D1
   SQL. Mail does not read the Accounts `accounts` database.
-- **Identity**: Gothwad Accounts. Mail never has its own login. It asks Accounts who is
+- **Identity**: Bansify Accounts. Mail never has its own login. It asks Accounts who is
   signed in (`/api/auth/me` with the browser's cookies, or `/api/oauth/userinfo` for bearer
   tokens). Inbound mailbox checks also use an Accounts endpoint; Mail never reads Accounts'
   database. Two URLs, two jobs: `AUTH_HUB_URL` is the base for **every server-side Accounts
-  fetch** and must reach the Accounts Worker (its Custom Domain, `api.gothwadtech.com`);
+  fetch** and must reach the Accounts Worker (its Custom Domain, `api.bansifytech.com`);
   `AUTH_SIGNIN_URL` is for **browser links only** (the 401 `signinUrl` and `accountUrl`) and
   falls back to `AUTH_HUB_URL` when unset. A bearer token is only accepted when Accounts issued
-  it to `gothwad-mail` **and** it carries the `mail` scope (otherwise 403 `insufficient_scope`);
+  it to `bansify-mail` **and** it carries the `mail` scope (otherwise 403 `insufficient_scope`);
   see `docs/NATIVE_API.md`.
 
 Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup steps.
 
 ## Hard rules (from the project owner)
 
-1. **Do not edit the Accounts repo** (`GothwadTech/accounts`). Do not invent Accounts
+1. **Do not edit the Accounts repo** (`BansifyTech/accounts`). Do not invent Accounts
    endpoints. An endpoint may be used only if it is documented in that repo; read it
    read-only to confirm the path and response before relying on it. If an owner supplies a
    contract before Accounts documents it, keep production traffic disabled until the docs
    and deployed behavior are confirmed. Do not merge Mail into Accounts.
 2. **Never hardcode the domain in logic.** Use env: `APP_DOMAIN`, `AUTH_HUB_URL`,
    `AUTH_SIGNIN_URL`, `MAIL_URL`. The D1 database id and name are not secrets and live in
-   `wrangler.toml`. Fallback defaults may contain `gothwadtech.com`.
+   `wrangler.toml`. Fallback defaults may contain `bansifytech.com`.
 3. **Never commit real keys.** `.env.example` and `wrangler` examples hold placeholders
    only. Only two Worker secrets exist: `ACCOUNTS_INTERNAL_TOKEN` and `RESEND_API_KEY`. They
    go in with `wrangler secret put` (or `npm run worker:secrets`) or the dashboard as type
@@ -79,7 +79,7 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
    own code. `src/components/AccountSheetFallback.tsx` exists only for the case where that
    script cannot load; it must never become the default.
 11e. **Every tab owns one account.** Canonical URL is `/u/<n>/[#folder]`; every request carries
-   `X-Gothwad-Authuser: <n>`, and the Worker passes it to Accounts as the tab selector. Never
+   `X-Bansify-Authuser: <n>`, and the Worker passes it to Accounts as the tab selector. Never
    read or write another tab's account, and never let an old account's row paint after a switch
    (`MailProvider` is keyed by slot id).
 11d. **Keep the shell responsive.** Use `100dvh` + flex `min-h-0` (no magic pixel heights),
@@ -157,7 +157,7 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
 - Draft autosave duplicated drafts when the draft id was read from a stale closure. Fixed
   with refs and a single-flight flush in `MailContext.tsx`. Keep it that way.
 - `decodeURIComponent` throws on bad `%` input. It is wrapped and returns 400.
-- The Worker must forward rotated `gothwad_*` Set-Cookie headers from Accounts to the
+- The Worker must forward rotated `bansify_*` Set-Cookie headers from Accounts to the
   browser. Dropping them signs the user out of Accounts (refresh-token rotation).
 - Do **not** collapse an Accounts answer Mail cannot read (3xx, HTML, missing `authenticated`,
   unusable username) into a signed-out 401. That made a broken Accounts handoff look like an
@@ -179,11 +179,11 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
   `WRANGLER_CI_OVERRIDE_NAME`, so a mismatch still deploys fine from Git but makes
   `npm run worker:secrets:list` and `npm run worker:deploy` target a different (non-existent)
   Worker. Fix the file, never the dashboard: `mail` holds the secrets, the
-  `mail.gothwadtech.com/api/*` route and the Email Routing catch-all.
+  `mail.bansifytech.com/api/*` route and the Email Routing catch-all.
 - Do **not** put secret values in `wrangler.toml` or make `/api/health` return anything more
   than booleans about which settings exist. It is a public endpoint; values never go there.
 - Do **not** point `AUTH_HUB_URL` at the Accounts Pages host
-  (`accounts.gothwadtech.com`). Cloudflare does not invoke a same-zone Worker attached by a
+  (`accounts.bansifytech.com`). Cloudflare does not invoke a same-zone Worker attached by a
   Route for a server-to-server call, so Mail got `200 text/html` from the SPA and reported 503
   `accounts_unexpected_response`. Server-side calls go to the Accounts Custom Domain
-  (`api.gothwadtech.com`); browser links go to `AUTH_SIGNIN_URL`.
+  (`api.bansifytech.com`); browser links go to `AUTH_SIGNIN_URL`.

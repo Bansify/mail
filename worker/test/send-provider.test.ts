@@ -80,7 +80,7 @@ test('MAIL_SEND_PROVIDER=cloudflare uses the binding and never calls Resend', as
 
   assert.equal(calls.length, 1);
   const message = calls[0];
-  assert.equal(message.from, 'alice@gothwadtech.com', 'From is username@APP_DOMAIN, like the Resend path');
+  assert.equal(message.from, 'alice@bansifytech.com', 'From is username@APP_DOMAIN, like the Resend path');
   assert.deepEqual(message.to, ['bob@example.com']);
   assert.deepEqual(message.cc, ['carol@example.com']);
   assert.equal(message.subject, 'Hi');

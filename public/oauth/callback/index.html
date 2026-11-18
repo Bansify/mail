@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>Opening Gothwad Mail…</title>
+    <title>Opening Bansify Mail…</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -94,9 +94,9 @@
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
         </svg>
       </div>
-      <h1>Opening Gothwad Mail</h1>
+      <h1>Opening Bansify Mail</h1>
       <p id="status">Handing this sign-in back to the Mail app…</p>
-      <a class="button" id="open-app" href="com.gothwad.mail:/oauth/callback">Open the Mail app</a>
+      <a class="button" id="open-app" href="com.bansify.mail:/oauth/callback">Open the Mail app</a>
       <a class="secondary" id="open-web" href="/">Continue in the browser instead</a>
     </main>
 
@@ -109,7 +109,7 @@
       // the code: it only moves the whole query string into the app's custom
       // scheme, so the app can exchange it over its own PKCE verifier.
       //
-      //  1. plain custom-scheme link (`com.gothwad.mail:/oauth/callback?...`)
+      //  1. plain custom-scheme link (`com.bansify.mail:/oauth/callback?...`)
       //     works from any browser and any app that registered the scheme;
       //  2. Chrome on Android also understands an `intent://` URL, which skips
       //     the app chooser; it is tried first there.
@@ -121,7 +121,7 @@
         var SEARCH = window.location.search || '';
         var HASH = window.location.hash || '';
         var TAIL = SEARCH + HASH;
-        var SCHEME = 'com.gothwad.mail:/oauth/callback';
+        var SCHEME = 'com.bansify.mail:/oauth/callback';
         var HTTPS = window.location.origin + '/oauth/callback';
         var ua = navigator.userAgent || '';
         var isAndroid = /Android/i.test(ua);
@@ -133,25 +133,25 @@
 
         if (!TAIL || TAIL === '?') {
           status.textContent =
-            'This page is where Gothwad Mail sign-in returns. Open the Mail app and sign in from there.';
+            'This page is where Bansify Mail sign-in returns. Open the Mail app and sign in from there.';
           return;
         }
 
         if (!isAndroid) {
           status.textContent =
-            'Sign-in finished. Open Gothwad Mail on your Android phone to continue, or use the browser version below.';
+            'Sign-in finished. Open Bansify Mail on your Android phone to continue, or use the browser version below.';
           return;
         }
 
         var intent =
-          'intent://mail.gothwadtech.com/oauth/callback' +
+          'intent://mail.bansifytech.com/oauth/callback' +
           TAIL +
-          '#Intent;scheme=https;package=com.gothwad.mail;' +
+          '#Intent;scheme=https;package=com.bansify.mail;' +
           'action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 
         // A visible fallback first: if the automatic hop is blocked, the button
         // below still works. href stays on the plain scheme link on purpose.
-        status.textContent = 'Opening Gothwad Mail…';
+        status.textContent = 'Opening Bansify Mail…';
 
         var started = Date.now();
         window.location.href = intent;

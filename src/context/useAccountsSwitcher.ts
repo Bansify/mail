@@ -10,7 +10,7 @@
 //      active account and rotates the slot cookies, then the session reconciles
 //
 // Reading a slot never touches other tabs: every call carries this tab's
-// X-Gothwad-Authuser, and the session route resolves that slot server-side.
+// X-Bansify-Authuser, and the session route resolves that slot server-side.
 // =============================================================================
 
 import { useCallback, useEffect, useState } from 'react';

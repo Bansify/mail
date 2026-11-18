@@ -1,11 +1,11 @@
 // =============================================================================
-// Account switcher, Google style: Mail's proxy in front of Gothwad Accounts.
+// Account switcher, Google style: Mail's proxy in front of Bansify Accounts.
 //
 // Accounts owns the list (one session cookie per slot `a`..`f`, plus the browser
 // "active" pointer). Mail never stores another account's credentials. It only:
 //
 //   1. proxies the calls with the browser's cookies AND the tab's
-//      `X-Gothwad-Authuser` selector, so /u/0 and /u/1 tabs stay independent,
+//      `X-Bansify-Authuser` selector, so /u/0 and /u/1 tabs stay independent,
 //   2. forwards every rotated Set-Cookie (via session.ts) — dropping them would
 //      sign the browser out of Accounts,
 //   3. adds the per-account unread counts from Mail's own D1.
@@ -95,7 +95,7 @@ async function callAccounts(
     accept: 'application/json',
     origin: browserOrigin(request, config),
   };
-  if (opts.selector) headers['x-gothwad-authuser'] = opts.selector;
+  if (opts.selector) headers['x-bansify-authuser'] = opts.selector;
   if (opts.body !== undefined) headers['content-type'] = 'application/json';
 
   let res: Response;

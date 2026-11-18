@@ -42,7 +42,7 @@ function setPath(pathname: string, search = ''): void {
 
 const identityBody = (authuser: number) => ({
   authenticated: true,
-  user: { username: authuser === 0 ? 'alice' : 'bob', email: 'x@gothwadtech.com', name: null },
+  user: { username: authuser === 0 ? 'alice' : 'bob', email: 'x@bansifytech.com', name: null },
   authuser,
   activeId: authuser === 0 ? 'a' : 'b',
   accounts: [],
@@ -97,14 +97,14 @@ test('two consumers share one identity request', async () => {
 test('the identity request is identity-only and carries this tab account', async () => {
   const req = requestIdentity();
   assert.ok(calls[0].url.endsWith('/api/session?meta=0'), `identity path, got ${calls[0].url}`);
-  assert.equal(calls[0].headers.get('x-gothwad-authuser'), '0');
+  assert.equal(calls[0].headers.get('x-bansify-authuser'), '0');
   calls[0].reply(identityBody(0));
   await req.promise;
   req.release();
 
   setPath('/u/1/');
   const other = requestIdentity();
-  assert.equal(calls[1].headers.get('x-gothwad-authuser'), '1', 'the selector travels with the request');
+  assert.equal(calls[1].headers.get('x-bansify-authuser'), '1', 'the selector travels with the request');
   calls[1].reply(identityBody(1));
   const info = await other.promise;
   assert.equal(info.authuser, 1, 'the answer belongs to the slot that asked');
@@ -161,7 +161,7 @@ test('the metadata request has its own key and its own account header', async ()
 
   const meta = requestSessionMeta(1);
   assert.equal(calls[1].url, '/api/session/meta');
-  assert.equal(calls[1].headers.get('x-gothwad-authuser'), '1');
+  assert.equal(calls[1].headers.get('x-bansify-authuser'), '1');
   calls[1].reply({ authuser: 1, unread: { bob: 3 }, limits: { dailySendLimit: 30, sendRemainingToday: 7 } });
   const answer = await meta.promise;
   assert.deepEqual(answer.unread, { bob: 3 });

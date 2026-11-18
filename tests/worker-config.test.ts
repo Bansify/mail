@@ -5,7 +5,7 @@
 // plain-text variables, so the API answered "not configured". These checks keep
 // the committed file complete (every public var filled in), keep the Cloudflare
 // D1 `mail` binding in place, and keep every secret out of the file. Names only
-// - never a value. Gothwad Mail is 100% Cloudflare native (zero Supabase).
+// - never a value. Bansify Mail is 100% Cloudflare native (zero Supabase).
 // =============================================================================
 
 import { test } from 'node:test';
@@ -130,7 +130,7 @@ test('the Accounts hosts stay split: server calls vs browser links', () => {
   // Known failure: the Pages host answers HTML to a server-to-server call.
   assert.notEqual(
     hub,
-    'https://accounts.gothwadtech.com',
+    'https://accounts.bansifytech.com',
     'AUTH_HUB_URL must not be the Accounts Pages host (503 accounts_unexpected_response)',
   );
   assert.match(hub, /^https:\/\/[a-z0-9.-]+$/i, `AUTH_HUB_URL looks wrong: "${hub}"`);

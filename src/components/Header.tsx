@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           2. DESKTOP TOP BAR (Classic Gmail 3-Pane Desktop Header)
       ========================================================================= */}
       <header className="hidden md:flex sticky top-0 z-30 h-16 w-full border-b border-neutral-200 dark:border-[#333333] bg-white dark:bg-[#212121] px-5 items-center justify-between gap-4 select-none">
-        {/* Left Zone: Hamburger + Gothwad Mail Monogram */}
+        {/* Left Zone: Hamburger + Bansify Mail Monogram */}
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={onToggleSidebar}

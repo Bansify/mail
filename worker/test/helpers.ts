@@ -26,7 +26,7 @@ export const ORIGINAL_FETCH = globalThis.fetch;
 export const MAIL_ORIGIN = 'https://mail.test';
 export const ACCOUNTS_TOKEN = 'mail_internal_TEST_ONLY';
 export const RESEND_KEY = 're_TEST_ONLY';
-/** Bearer token the stubs treat as a valid Gothwad Mail OAuth access token. */
+/** Bearer token the stubs treat as a valid Bansify Mail OAuth access token. */
 export const MAIL_TOKEN = 'Bearer goodtoken';
 
 let seen: Seen[] = [];
@@ -65,7 +65,7 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
   d1 = createLocalD1(':memory:');
   return {
     DB: d1 as unknown as Env['DB'],
-    APP_DOMAIN: 'gothwadtech.com',
+    APP_DOMAIN: 'bansifytech.com',
     AUTH_HUB_URL: 'https://accounts.test',
     MAIL_URL: MAIL_ORIGIN,
     ENVIRONMENT: 'production',
@@ -95,7 +95,7 @@ export function req(path: string, init: RequestInit & { cookie?: string; origin?
 }
 
 export function authed(path: string, init: RequestInit = {}): Request {
-  return req(path, { ...init, cookie: 'gothwad_at=good' });
+  return req(path, { ...init, cookie: 'bansify_at=good' });
 }
 
 export function writeInit(method: string, body: unknown): RequestInit {
@@ -108,34 +108,34 @@ export function writeInit(method: string, body: unknown): RequestInit {
 }
 
 /**
- * The `/api/oauth/userinfo` body a Gothwad Mail token really produces (see
- * GothwadTech/accounts `cloudflare-worker/src/routes/oauth.ts` and migration
+ * The `/api/oauth/userinfo` body a Bansify Mail token really produces (see
+ * BansifyTech/accounts `cloudflare-worker/src/routes/oauth.ts` and migration
  * 0014): `client_id`/`aud` name the app, and `scopes` carries the granted set.
  * Overrides let a test mint a token for another app or drop a scope.
  */
 export function oauthUserInfo(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     sub: '1',
-    client_id: 'gothwad-mail',
-    aud: 'gothwad-mail',
+    client_id: 'bansify-mail',
+    aud: 'bansify-mail',
     scope: 'email mail offline_access profile',
     scopes: ['email', 'mail', 'offline_access', 'profile'],
     preferred_username: 'alice',
     name: 'Alice Sharma',
     given_name: 'Alice',
     family_name: 'Sharma',
-    email: 'alice@gothwadtech.com',
+    email: 'alice@bansifytech.com',
     email_verified: true,
     picture: null,
     ...overrides,
   };
 }
 
-/** Accounts stub that treats the cookie "gothwad_at=good" as user alice. */
+/** Accounts stub that treats the cookie "bansify_at=good" as user alice. */
 export function accountsStub(s: Seen): Response | null {
   if (s.url.origin !== 'https://accounts.test') return null;
   if (s.url.pathname === '/api/auth/me') {
-    if (s.headers.get('cookie') === 'gothwad_at=good') {
+    if (s.headers.get('cookie') === 'bansify_at=good') {
       return Response.json({
         authenticated: true,
         user: { username: 'Alice', first_name: 'Alice', last_name: 'Sharma' },
@@ -219,13 +219,13 @@ export function accountsMeStub(make: (s: Seen) => Response): Stub {
 }
 
 export async function sessionResponse(customEnv: Env = env): Promise<{ res: Response; body: Record<string, unknown> }> {
-  const res = await handleRequest(req('/api/session', { cookie: 'gothwad_at=fresh' }), customEnv);
+  const res = await handleRequest(req('/api/session', { cookie: 'bansify_at=fresh' }), customEnv);
   return { res, body: (await res.json()) as Record<string, unknown> };
 }
 
 export const EML = [
   'From: Ravi <ravi@example.org>',
-  'To: pawan@gothwadtech.com',
+  'To: pawan@bansifytech.com',
   'Subject: Invoice for October',
   'Message-ID: <abc123@example.org>',
   'MIME-Version: 1.0',

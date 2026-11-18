@@ -204,7 +204,7 @@ export const SettingsModal: React.FC = () => {
             <p className="text-xs text-neutral-600 dark:text-neutral-300">
               Signed in as <span className="font-semibold">{currentUser.email}</span>.{' '}
               <a href={accountUrl} target="_blank" rel="noreferrer" className="text-[#0494f4] hover:underline">
-                Manage your Gothwad Account
+                Manage your Bansify Account
               </a>
             </p>
           </div>

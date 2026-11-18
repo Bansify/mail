@@ -88,7 +88,7 @@ export const MailProvider: React.FC<{
   // Theme: strictly light (#ffffff) or dark (#212121)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {
-      const saved = localStorage.getItem('gothwad_mail_theme');
+      const saved = localStorage.getItem('bansify_mail_theme');
       if (saved === 'dark' || saved === 'light') return saved;
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return 'dark';
@@ -107,7 +107,7 @@ export const MailProvider: React.FC<{
       root.classList.remove('dark');
     }
     try {
-      localStorage.setItem('gothwad_mail_theme', theme);
+      localStorage.setItem('bansify_mail_theme', theme);
     } catch {
       // ignore
     }
