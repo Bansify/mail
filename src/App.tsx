@@ -74,7 +74,7 @@ const MainLayout: React.FC = () => {
 
   // Unread count in the tab title, like every mail app. Only the inbox counts.
   useEffect(() => {
-    document.title = unreadInboxCount > 0 ? `(${unreadInboxCount}) bansify` : 'bansify';
+    document.title = unreadInboxCount > 0 ? `(${unreadInboxCount}) bansify mail` : 'bansify mail';
   }, [unreadInboxCount]);
 
   // Keyboard shortcuts: 'c' compose, '#' move to Trash (or delete forever in Trash),
@@ -235,7 +235,7 @@ export default function App() {
   if (state.status === 'loading') return <Screen title="Checking your Gothwad account…" />;
   if (state.status === 'redirecting') return <Screen title="Redirecting you to sign in…" />;
   if (state.status === 'error') {
-    return <Screen title="Can't open bansify" detail={state.message} onRetry={() => void retry()} />;
+    return <Screen title="Can't open bansify mail" detail={state.message} onRetry={() => void retry()} />;
   }
 
   const { info } = state;
