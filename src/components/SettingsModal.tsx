@@ -71,7 +71,7 @@ export const SettingsModal: React.FC = () => {
               <Settings className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-900 dark:text-white">bansify mail Settings</h3>
+              <h3 className="text-base font-bold text-neutral-900 dark:text-white">Bansify Email Settings</h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 Storage, retention, appearance and shortcuts
               </p>
