@@ -1,6 +1,6 @@
-# Gothwad Mail
+# Bansify Mail
 
-Webmail for `username@APP_DOMAIN` addresses. You sign in with **Gothwad Accounts**, and
+Webmail for `username@APP_DOMAIN` addresses. You sign in with **Bansify Accounts**, and
 your address comes from your username.
 
 - **Web app**: React + Vite + Tailwind PWA (`src/`).
@@ -13,9 +13,9 @@ your address comes from your username.
 
 Folders: **Inbox, Starred, Sent, Drafts, Trash**.
 
-**Several accounts, one browser.** Up to six Gothwad accounts can stay signed in, exactly like
+**Several accounts, one browser.** Up to six Bansify accounts can stay signed in, exactly like
 Gmail: every tab owns one account (`/u/0/`, `/u/1/`, …), and the profile avatar opens the
-*shared* Gothwad account menu hosted by Accounts
+*shared* Bansify account menu hosted by Accounts
 (`${accountsWebOrigin}/widget/account-menu.js`) — the same sheet Accounts, Store and Console
 show. Mail supplies the data and the handlers; it does not draw a second menu.
 
@@ -84,18 +84,18 @@ After a deploy, `GET /api/health` shows live D1 readiness and which settings exi
 only:
 
 ```json
-{"ok":true,"service":"gothwad-mail","engine":"cloudflare-d1-native",
+{"ok":true,"service":"bansify-mail","engine":"cloudflare-d1-native",
  "environment":"production",
  "database":{"bound":true,"ready":true,"tables":2},
  "configured":{"d1Binding":true,"accountsInternalToken":true,"resendApiKey":true}}
 ```
 
 `AUTH_HUB_URL` is the base for every server-side Accounts call and must reach the Accounts
-Worker (`https://api.gothwadtech.com`, its Custom Domain). `AUTH_SIGNIN_URL` is used only for
+Worker (`https://api.bansifytech.com`, its Custom Domain). `AUTH_SIGNIN_URL` is used only for
 browser-facing links — the sign-in redirect and `accountUrl` — and falls back to
 `AUTH_HUB_URL` when unset.
 
-Nothing in the code hardcodes the domain. Fallback defaults may use `gothwadtech.com`.
+Nothing in the code hardcodes the domain. Fallback defaults may use `bansifytech.com`.
 
 ## Deploy
 

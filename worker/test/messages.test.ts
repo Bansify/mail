@@ -139,7 +139,7 @@ test('bad folder and bad id are rejected before the database is touched', async 
 
 test('malformed percent-encoding in a message id is a 400, not a 500', async () => {
   h.stub = fullStub;
-  const res = await handleRequest(req('/api/mail/messages/%E0%A4%A', { cookie: 'gothwad_at=good' }), h.env);
+  const res = await handleRequest(req('/api/mail/messages/%E0%A4%A', { cookie: 'bansify_at=good' }), h.env);
   assert.equal(res.status, 400);
   assert.equal(((await res.json()) as { error: string }).error, 'bad_request');
 });

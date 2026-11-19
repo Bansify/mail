@@ -4,10 +4,10 @@
 //   GET  /api/auth/accounts              { activeId, authuser, accounts }
 //   POST /api/auth/switch  {id}|{authuser}
 //   POST /api/auth/accounts/:id/signout
-//   GET  /api/auth/me  (honours X-Gothwad-Authuser)
+//   GET  /api/auth/me  (honours X-Bansify-Authuser)
 //
 // What these tests protect:
-//   - the tab's X-Gothwad-Authuser reaches Accounts (multi-tab correctness)
+//   - the tab's X-Bansify-Authuser reaches Accounts (multi-tab correctness)
 //   - every rotated Set-Cookie is forwarded, multiple headers intact
 //   - a switch returns accounts + authuser + unread in one call
 //   - signing one account out promotes the other instead of signing out all
@@ -33,7 +33,7 @@ const SLOT_B = { id: 'b', authuser: 1, username: 'bob', firstName: 'Bob', lastNa
 function publicAccount(slot: typeof SLOT_A) {
   return {
     ...slot,
-    email: `${slot.username}@gothwadtech.com`,
+    email: `${slot.username}@bansifytech.com`,
     avatarUrl: null,
     accountUrl: `https://accounts.test/u/${slot.authuser}/me`,
     lastUsedAt: '2026-10-20T10:00:00.000Z',
@@ -43,9 +43,9 @@ function publicAccount(slot: typeof SLOT_A) {
 /** Cookies the live service sets on a switch; all must reach the browser. */
 function withSlotCookies(res: Response, activeId: string): Response {
   const headers = new Headers(res.headers);
-  headers.append('set-cookie', `gothwad_active=${activeId}; Domain=.gothwadtech.com; Path=/; HttpOnly`);
-  headers.append('set-cookie', `gothwad_sess_${activeId}=rotated; Domain=.gothwadtech.com; Path=/; HttpOnly`);
-  headers.append('set-cookie', `gothwad_accounts=signed; Domain=.gothwadtech.com; Path=/; HttpOnly`);
+  headers.append('set-cookie', `bansify_active=${activeId}; Domain=.bansifytech.com; Path=/; HttpOnly`);
+  headers.append('set-cookie', `bansify_sess_${activeId}=rotated; Domain=.bansifytech.com; Path=/; HttpOnly`);
+  headers.append('set-cookie', `bansify_accounts=signed; Domain=.bansifytech.com; Path=/; HttpOnly`);
   return new Response(res.body, { status: res.status, headers });
 }
 
@@ -73,7 +73,7 @@ function switcherStub(opts: StubOptions = {}): Stub {
 
     if (s.url.pathname === '/api/auth/me') {
       // The selector can be an index, a slot id or a username, like upstream.
-      const selector = (s.headers.get('x-gothwad-authuser') || '').trim().toLowerCase();
+      const selector = (s.headers.get('x-bansify-authuser') || '').trim().toLowerCase();
       const chosen =
         accounts.find((a) => String(a.authuser) === selector) ??
         accounts.find((a) => a.id === selector) ??
@@ -144,13 +144,13 @@ test('accounts: lists both accounts with per-account unread counts', async () =>
     name: 'Alice Sharma',
     firstName: 'Alice',
     lastName: 'Sharma',
-    email: 'alice@gothwadtech.com',
+    email: 'alice@bansifytech.com',
     avatarUrl: null,
     accountUrl: 'https://accounts.test/u/0/me',
     lastUsedAt: '2026-10-20T10:00:00.000Z',
   });
   // Derived server-side, never trusted from the upstream body.
-  assert.equal(body.accounts[1].email, 'bob@gothwadtech.com');
+  assert.equal(body.accounts[1].email, 'bob@bansifytech.com');
   assert.deepEqual(body.unread, { alice: 2, bob: 0 });
   assert.equal(body.unsupported, undefined);
 });
@@ -160,7 +160,7 @@ test('accounts: the TAB selector decides which account is active, not the browse
   const tab0 = await (await worker.fetch(authed('/api/mail/accounts'), h.env)).json();
   const tab1 = await (
     await worker.fetch(
-      req('/api/mail/accounts', { cookie: 'gothwad_at=good', headers: { 'X-Gothwad-Authuser': '1' } }),
+      req('/api/mail/accounts', { cookie: 'bansify_at=good', headers: { 'X-Bansify-Authuser': '1' } }),
       h.env
     )
   ).json();
@@ -171,7 +171,7 @@ test('accounts: the TAB selector decides which account is active, not the browse
   assert.equal(tab1.activeId, 'b');
   assert.equal(tab1.authuser, 1);
   // The selector was forwarded upstream on both calls.
-  const forwarded = h.seen.filter((s) => s.url.pathname === '/api/auth/accounts').map((s) => s.headers.get('x-gothwad-authuser'));
+  const forwarded = h.seen.filter((s) => s.url.pathname === '/api/auth/accounts').map((s) => s.headers.get('x-bansify-authuser'));
   assert.deepEqual(forwarded, [null, '1']);
 });
 
@@ -250,15 +250,15 @@ test('accounts: switch by id forwards Origin (Accounts requires it) and slot coo
   assert.ok(upstream, 'Accounts was called');
   assert.equal(upstream!.method, 'POST');
   assert.deepEqual(JSON.parse(upstream!.body!), { id: 'b' });
-  assert.equal(upstream!.headers.get('cookie'), 'gothwad_at=good');
+  assert.equal(upstream!.headers.get('cookie'), 'bansify_at=good');
   assert.equal(upstream!.headers.get('origin'), MAIL_ORIGIN);
 
   // Every rotated cookie, as separate headers (never joined or overwritten).
   const cookies = res.headers.getSetCookie();
   assert.equal(cookies.length, 3);
-  assert.ok(cookies.some((c) => c.startsWith('gothwad_active=b')));
-  assert.ok(cookies.some((c) => c.startsWith('gothwad_sess_b=rotated')));
-  assert.ok(cookies.some((c) => c.startsWith('gothwad_accounts=')));
+  assert.ok(cookies.some((c) => c.startsWith('bansify_active=b')));
+  assert.ok(cookies.some((c) => c.startsWith('bansify_sess_b=rotated')));
+  assert.ok(cookies.some((c) => c.startsWith('bansify_accounts=')));
 });
 
 test('accounts: switch accepts the Google authuser index', async () => {
@@ -283,7 +283,7 @@ test('accounts: switch is a CSRF-guarded write', async () => {
   const res = await worker.fetch(
     req('/api/mail/accounts/switch', {
       method: 'POST',
-      cookie: 'gothwad_at=good',
+      cookie: 'bansify_at=good',
       origin: 'https://evil.test',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: 'b' }),
@@ -339,7 +339,7 @@ test('accounts: signing out the last account reports signedOutAll', async () => 
 test('accounts: "add another account" carries authuser + next for the new slot', async () => {
   h.stub = fullStub;
   const res = await worker.fetch(
-    req('/api/mail/accounts/add', { cookie: 'gothwad_at=good', headers: { 'X-Gothwad-Authuser': '1' } }),
+    req('/api/mail/accounts/add', { cookie: 'bansify_at=good', headers: { 'X-Bansify-Authuser': '1' } }),
     h.env
   );
   assert.equal(res.status, 302);
@@ -378,7 +378,7 @@ test('accounts keep Accounts\' own numbering, even when the array is shuffled', 
     return new Response('x', { status: 599 });
   };
 
-  const res = await worker.fetch(authed('/api/mail/accounts', { headers: { 'X-Gothwad-Authuser': '1' } }), h.env);
+  const res = await worker.fetch(authed('/api/mail/accounts', { headers: { 'X-Bansify-Authuser': '1' } }), h.env);
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.deepEqual(
@@ -396,7 +396,7 @@ test('POST /api/mail/accounts/signout-all revokes every slot', async () => {
   const seen: string[] = [];
   h.stub = (s) => {
     if (s.url.pathname === '/api/auth/signout') {
-      seen.push(String(s.headers.get('x-gothwad-authuser')));
+      seen.push(String(s.headers.get('x-bansify-authuser')));
       return Response.json({ ok: true });
     }
     return new Response('x', { status: 599 });
@@ -405,9 +405,9 @@ test('POST /api/mail/accounts/signout-all revokes every slot', async () => {
   const res = await worker.fetch(
     req('/api/mail/accounts/signout-all', {
       method: 'POST',
-      cookie: 'gothwad_at=good',
+      cookie: 'bansify_at=good',
       origin: MAIL_ORIGIN,
-      headers: { 'X-Gothwad-Authuser': '1', 'content-type': 'application/json' },
+      headers: { 'X-Bansify-Authuser': '1', 'content-type': 'application/json' },
       body: '{}',
     }),
     h.env
@@ -422,7 +422,7 @@ test('signout-all needs a same-origin write, like the other account routes', asy
   const res = await worker.fetch(
     req('/api/mail/accounts/signout-all', {
       method: 'POST',
-      cookie: 'gothwad_at=good',
+      cookie: 'bansify_at=good',
       origin: 'https://evil.test',
       headers: { 'content-type': 'application/json' },
       body: '{}',

@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Gothwad Mail",
-  "short_name": "GothwadMail",
-  "description": "Fast, modern desktop and mobile webmail for your Gothwad address, signed in with Gothwad Accounts.",
+  "name": "Bansify Email",
+  "short_name": "Bansify Email",
+  "description": "Fast, modern desktop and mobile webmail for your Bansify address, signed in with Bansify Accounts.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

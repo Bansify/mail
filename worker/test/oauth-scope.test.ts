@@ -2,11 +2,11 @@
 //
 // The Android client signs in through Accounts and calls this Worker with an
 // access token. A token is only usable here when Accounts issued it to
-// `gothwad-mail` AND it carries the `mail` scope — otherwise a token minted for
-// another Gothwad app (Store, Tube) would open somebody's mailbox.
+// `bansify-mail` AND it carries the `mail` scope — otherwise a token minted for
+// another Bansify app (Store, Tube) would open somebody's mailbox.
 //
 // The fixture body mirrors the live `/api/oauth/userinfo` response in
-// GothwadTech/accounts (routes/oauth.ts + migration 0014).
+// BansifyTech/accounts (routes/oauth.ts + migration 0014).
 //
 // Run: npm run test:worker
 
@@ -48,7 +48,7 @@ async function setAttachments(id: string, attachments: unknown[]): Promise<void>
 // Accepted tokens
 // ---------------------------------------------------------------------------
 
-test('a gothwad-mail token with the mail scope reads the mailbox', async () => {
+test('a bansify-mail token with the mail scope reads the mailbox', async () => {
   h.stub = fullStub;
   await seedMessage({ folder: 'inbox', subject: 'Mobile hello' });
 
@@ -69,7 +69,7 @@ test('the session payload for a bearer caller names one account and the real nam
   const body = await res.json();
 
   assert.equal(body.user.username, 'alice');
-  assert.equal(body.user.email, 'alice@gothwadtech.com');
+  assert.equal(body.user.email, 'alice@bansifytech.com');
   assert.equal(body.user.firstName, 'Alice', 'given_name is preferred');
   assert.equal(body.user.lastName, 'Sharma', 'family_name is preferred');
   assert.equal(body.authuser, 0);
@@ -118,13 +118,13 @@ test('a bearer caller can send, with no Cookie and no Origin header', async () =
 });
 
 test('the legacy space-separated scope string is accepted too', async () => {
-  h.stub = userinfoStub({ preferred_username: 'alice', client_id: 'gothwad-mail', scope: 'profile email mail' });
+  h.stub = userinfoStub({ preferred_username: 'alice', client_id: 'bansify-mail', scope: 'profile email mail' });
   const res = await worker.fetch(bearer('/api/mail/messages'), h.env);
   assert.equal(res.status, 200);
 });
 
 test('an audience-only body passes (client_id absent, aud names Mail)', async () => {
-  h.stub = userinfoStub({ preferred_username: 'alice', aud: 'gothwad-mail', scopes: ['profile', 'mail'] });
+  h.stub = userinfoStub({ preferred_username: 'alice', aud: 'bansify-mail', scopes: ['profile', 'mail'] });
   const res = await worker.fetch(bearer('/api/mail/messages'), h.env);
   assert.equal(res.status, 200);
 });
@@ -139,11 +139,11 @@ test('a token for another client is 403 insufficient_scope, not a signed-out bou
   assert.equal(res.status, 403);
   const body = await res.json();
   assert.equal(body.error, 'insufficient_scope');
-  assert.equal(body.requiredClient, 'gothwad-mail');
+  assert.equal(body.requiredClient, 'bansify-mail');
   assert.equal(body.signinUrl, undefined, 'never a sign-in redirect for a valid foreign token');
 });
 
-test('a gothwad-mail token without the mail scope is refused', async () => {
+test('a bansify-mail token without the mail scope is refused', async () => {
   h.stub = userinfoStub(oauthUserInfo({ scopes: ['profile', 'email', 'offline_access'], scope: 'profile email offline_access' }));
   const res = await worker.fetch(bearer('/api/mail/messages'), h.env);
   assert.equal(res.status, 403);

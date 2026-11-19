@@ -2,7 +2,7 @@
 // The account menu host.
 //
 // Mail does not draw its own switcher any more: it opens the shared
-// Accounts-hosted widget (`window.GothwadAccountMenu`), the same sheet Google
+// Accounts-hosted widget (`window.BansifyAccountMenu`), the same sheet Google
 // shows on every surface. This component only:
 //
 //   open  -> build the widget's (state, opts) from Mail's live data

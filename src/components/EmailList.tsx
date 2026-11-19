@@ -266,7 +266,7 @@ export const EmailList: React.FC = () => {
             </h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm">
               {currentFolder === 'inbox'
-                ? 'Mail sent to your Gothwad address will show up here.'
+                ? 'Mail sent to your Bansify address will show up here.'
                 : 'Nothing to show here yet.'}
             </p>
           </div>

@@ -1,7 +1,7 @@
 // =============================================================================
 // Repository language hygiene.
 //
-// Gothwad Mail is a public repository with a single owner-facing UI, so every
+// Bansify Mail is a public repository with a single owner-facing UI, so every
 // shipped string, code comment and document is written in English. Chat with the
 // owner can be Hinglish; the repository cannot, because a mixed-language codebase
 // is what makes the next contributor guess.

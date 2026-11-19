@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom';
 
 export const API = process.env.MAIL_API_ORIGIN || 'http://127.0.0.1:8787';
 export const APP_ORIGIN = 'http://localhost:3000';
-export const GOOD_COOKIE = process.env.MAIL_TEST_COOKIE || 'gothwad_at=good';
+export const GOOD_COOKIE = process.env.MAIL_TEST_COOKIE || 'bansify_at=good';
 
 let activeCookie = GOOD_COOKIE;
 export const setCookie = (cookie: string) => {
@@ -89,7 +89,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
     if (setCookieHeader) {
       for (const pair of setCookieHeader.split(/,(?=[^;]+?=)/)) {
         const name = pair.split('=')[0].trim();
-        if (name && name.startsWith('gothwad_')) {
+        if (name && name.startsWith('bansify_')) {
           activeCookie = activeCookie
             .split(';')
             .map((c) => c.trim())
@@ -178,7 +178,7 @@ export function accountDialog(): HTMLElement | null {
 // In a browser, Mail dynamically imports `${accountsWebOrigin}/widget/account-menu.js`.
 // jsdom cannot import an http URL, so the tests load Mail's local stand-in
 // (tools/account-menu-widget.stub.js, served by the dev server at exactly that
-// path) and install it as `window.GothwadAccountMenu` — which is what the loader
+// path) and install it as `window.BansifyAccountMenu` — which is what the loader
 // checks first. Mail's own code path (loader -> open(state, opts) -> callbacks)
 // is therefore exercised for real, not mocked.
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ export interface WidgetRig {
 export async function installAccountWidget(): Promise<WidgetRig> {
   const { resetAccountWidgetForTests } = await import('../src/services/accountWidget.ts');
   // The stand-in is plain JS; the widget contract is what matters here.
-  const stub = (await import('../tools/account-menu-widget.stub.js')).GothwadAccountMenu as {
+  const stub = (await import('../tools/account-menu-widget.stub.js')).BansifyAccountMenu as {
     open: (state?: Record<string, unknown>, opts?: Record<string, unknown>) => void;
     update: (state?: Record<string, unknown>, opts?: Record<string, unknown>) => void;
     close: () => void;
@@ -219,7 +219,7 @@ export async function installAccountWidget(): Promise<WidgetRig> {
     close: () => stub.close(),
     isOpen: () => stub.isOpen(),
   };
-  (window as unknown as { GothwadAccountMenu?: unknown }).GothwadAccountMenu = api;
+  (window as unknown as { BansifyAccountMenu?: unknown }).BansifyAccountMenu = api;
   return { calls, close: () => stub.close(), isOpen: () => stub.isOpen() };
 }
 
@@ -231,7 +231,7 @@ export async function removeAccountWidget(): Promise<void> {
 
 /** The widget's shadow root (it renders inside one), or null when closed. */
 export function sheetShadow(): ShadowRoot | null {
-  const host = document.querySelector('[data-gothwad-account-menu-stub]');
+  const host = document.querySelector('[data-bansify-account-menu-stub]');
   return (host?.shadowRoot as ShadowRoot | null) ?? null;
 }
 

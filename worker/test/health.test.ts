@@ -42,7 +42,7 @@ test('health is public, reports D1 readiness, and calls no upstream', async () =
   const body = await res.json();
   assert.equal(body.ok, true);
   assert.equal(body.engine, 'cloudflare-d1-native');
-  assert.equal(body.service, 'gothwad-mail');
+  assert.equal(body.service, 'bansify-mail');
   assert.deepEqual(body.database, { bound: true, ready: true, tables: 2 });
   assert.deepEqual(body.configured, {
     d1Binding: true,

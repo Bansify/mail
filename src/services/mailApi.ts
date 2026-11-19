@@ -2,7 +2,7 @@
 // Browser client for the Mail Worker API.
 //
 // Why relative /api: in production the Worker is routed on
-// mail.gothwadtech.com/api/*. In dev, Vite proxies /api to `wrangler dev`.
+// mail.bansifytech.com/api/*. In dev, Vite proxies /api to `wrangler dev`.
 // Either way the browser stays on one origin, so the session cookie is sent
 // and no CORS setup is needed.
 //
@@ -14,7 +14,7 @@ import { authUserHeaders } from './authuser';
 
 const API_BASE = '/api';
 
-// Error codes the Worker can send back. The 503 codes mean the Gothwad Account
+// Error codes the Worker can send back. The 503 codes mean the Bansify Account
 // is signed in but Mail could not read it, so the app must show a retry message
 // instead of sending the browser to Accounts again (that looped the chooser).
 export const API_ERROR = {
@@ -114,7 +114,7 @@ export interface MailboxSettings {
   updatedAt?: string;
 }
 
-/** One signed-in Gothwad account, as listed by the Worker (see worker/src/accounts.ts). */
+/** One signed-in Bansify account, as listed by the Worker (see worker/src/accounts.ts). */
 export interface AccountSummary {
   /** Accounts slot id ("a".."f"). */
   id: string;
@@ -188,7 +188,7 @@ async function request<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
   } catch {
     // Includes AbortError: a cancelled call is not a network failure the user
     // should be told about, so callers drop it by their own generation check.
-    throw new ApiError(0, 'network', 'Cannot reach Gothwad Mail right now. Check your connection.');
+    throw new ApiError(0, 'network', 'Cannot reach Bansify Mail right now. Check your connection.');
   }
 
   const data = (await res.json().catch(() => null)) as
@@ -263,7 +263,7 @@ export const mailApi = {
   reauthUrl: (authuser: number, username?: string) => {
     const qs = new URLSearchParams({ login: '1', authuser: String(authuser), next: `/u/${authuser}/` });
     if (username) qs.set('username', username);
-    return `https://accounts.gothwadtech.com/signin?${qs.toString()}`;
+    return `https://accounts.bansifytech.com/signin?${qs.toString()}`;
   },
 
   send: (payload: { to: string[]; cc: string[]; bcc: string[]; subject: string; body: string; draftId?: string }) =>

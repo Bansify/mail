@@ -2,14 +2,14 @@
 // Worker config + env typing.
 //
 // Why: the domain and URLs come from env so the same code works when the
-// company moves from gothwadtech.com to gothwad.in. We only keep fallback
+// company moves from bansifytech.com to bansify.in. We only keep fallback
 // defaults here so a missing var does not break the Worker silently.
 //
 // Two Accounts URLs, because Accounts answers differently per host:
 //   AUTH_HUB_URL     base for every SERVER-side fetch (/api/auth/me,
 //                    /api/oauth/userinfo, /api/internal/usernames/:username).
 //                    This must be a host that reaches the Accounts Worker,
-//                    e.g. its Custom Domain api.gothwadtech.com.
+//                    e.g. its Custom Domain api.bansifytech.com.
 //   AUTH_SIGNIN_URL  base for browser-facing links only (sign-in redirect and
 //                    accountUrl). Cloudflare does not run a same-zone Worker
 //                    behind a Pages host for a server-to-server call, so the
@@ -71,9 +71,9 @@ export interface Config {
   devAuthUsername: string | null;
 }
 
-const DEFAULT_APP_DOMAIN = 'gothwadtech.com';
-const DEFAULT_AUTH_HUB_URL = 'https://accounts.gothwadtech.com';
-const DEFAULT_MAIL_URL = 'https://mail.gothwadtech.com';
+const DEFAULT_APP_DOMAIN = 'bansifytech.com';
+const DEFAULT_AUTH_HUB_URL = 'https://accounts.bansifytech.com';
+const DEFAULT_MAIL_URL = 'https://mail.bansifytech.com';
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '');

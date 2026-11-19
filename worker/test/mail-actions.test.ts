@@ -186,7 +186,7 @@ test('a batch requires a session and the same write guard as every other write',
   const crossSite = await worker.fetch(
     new Request('https://mail.test/api/mail/messages/batch', {
       method: 'POST',
-      headers: { cookie: 'gothwad_at=good', 'content-type': 'application/x-www-form-urlencoded' },
+      headers: { cookie: 'bansify_at=good', 'content-type': 'application/x-www-form-urlencoded' },
       body: JSON.stringify({ ids: [id], isRead: true }),
     }),
     h.env

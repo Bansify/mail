@@ -57,7 +57,7 @@ test('textToHtml escapes markup and keeps line breaks', () => {
 });
 
 test('inbound routing only accepts our APP_DOMAIN, case-insensitive', () => {
-  assert.equal(localPartForDomain('Pawan@GothwadTech.com', 'gothwadtech.com'), 'pawan');
-  assert.equal(localPartForDomain('pawan@gmail.com', 'gothwadtech.com'), null);
-  assert.equal(localPartForDomain('no-at-sign', 'gothwadtech.com'), null);
+  assert.equal(localPartForDomain('Pawan@BansifyTech.com', 'bansifytech.com'), 'pawan');
+  assert.equal(localPartForDomain('pawan@gmail.com', 'bansifytech.com'), null);
+  assert.equal(localPartForDomain('no-at-sign', 'bansifytech.com'), null);
 });

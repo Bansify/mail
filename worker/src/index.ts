@@ -1,7 +1,7 @@
 // =============================================================================
-// Gothwad Mail Worker: one Worker with two entry points.
+// Bansify Mail Worker: one Worker with two entry points.
 //
-//   fetch()  -> REST API under /api/* (route: mail.gothwadtech.com/api/*)
+//   fetch()  -> REST API under /api/* (route: mail.bansifytech.com/api/*)
 //   email()  -> inbound mail from Cloudflare Email Routing (catch-all)
 //
 // Storage is Cloudflare D1 (`env.DB`, database `mail`). Zero Supabase.
@@ -232,7 +232,7 @@ async function route(request: Request, env: Env, config: Config): Promise<Respon
     const database = await d1Readiness(env);
     return json({
       ok: true,
-      service: 'gothwad-mail',
+      service: 'bansify-mail',
       engine: 'cloudflare-d1-native',
       environment: config.isProduction ? 'production' : 'development',
       database,

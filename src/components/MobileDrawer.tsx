@@ -60,7 +60,7 @@ export const MobileDrawer: React.FC = () => {
               </svg>
             </div>
             <span className="text-base font-bold text-neutral-900 dark:text-white">
-              Gothwad<span className="text-[#0494f4] font-semibold ml-1">Mail</span>
+              bansify
             </span>
           </div>
           <button
@@ -126,7 +126,7 @@ export const MobileDrawer: React.FC = () => {
             className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-full text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-[#2b2b2b]"
           >
             <ExternalLink className="w-4 h-4 text-neutral-500" />
-            <span>Manage Gothwad Account</span>
+            <span>Manage Bansify Account</span>
           </a>
         </div>
 

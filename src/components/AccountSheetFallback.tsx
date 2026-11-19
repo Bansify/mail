@@ -184,7 +184,7 @@ export const AccountSheetFallback: React.FC<AccountSheetFallbackProps> = (props)
             className="flex min-h-[48px] w-full items-center gap-3 rounded-full px-3 text-sm text-neutral-800 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-[#2a2a2a]"
           >
             <Mail className="h-4 w-4" />
-            <span className="flex-1">Manage your Gothwad Account</span>
+            <span className="flex-1">Manage your Bansify Account</span>
             <ExternalLink className="h-3.5 w-3.5 text-neutral-400" />
           </a>
         </div>

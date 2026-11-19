@@ -10,7 +10,7 @@
 // - 401 + signinUrl -> send the browser to Accounts with ?next= back to this
 //          Mail page. If that return still gets 401, show an error instead of
 //          looping through the chooser forever.
-// - 503 -> the Gothwad Account is signed in but Mail could not read it (or
+// - 503 -> the Bansify Account is signed in but Mail could not read it (or
 //          Accounts is down). A 503 must NEVER redirect: the chooser would just
 //          come back. The screen shows the reason with a Retry button.
 // - other -> show an error with a retry button (no fake signed-in state).
@@ -40,7 +40,7 @@ const RETURNED_WITHOUT_SESSION_MESSAGE =
 // A 503 with these codes is NOT an expired cookie: the account is signed in and
 // Mail could not read the profile from Accounts. Keep the wording about that.
 const ACCOUNTS_PROFILE_MESSAGE =
-  'Your Gothwad Account is signed in, but Mail could not load your profile. Try again in a minute, or contact the admin.';
+  'Your Bansify Account is signed in, but Mail could not load your profile. Try again in a minute, or contact the admin.';
 
 /** Message the session error screen shows for a failed /api/session call. */
 export function sessionErrorMessage(err: unknown): string {

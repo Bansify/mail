@@ -9,30 +9,30 @@ import {
 import { classifySessionFailure, sessionErrorMessage } from '../src/hooks/useSession';
 import { ApiError } from '../src/services/mailApi';
 
-const SIGNIN = 'https://accounts.gothwadtech.com/signin?choose=1';
+const SIGNIN = 'https://accounts.bansifytech.com/signin?choose=1';
 const PROFILE_MESSAGE =
-  'Your Gothwad Account is signed in, but Mail could not load your profile. Try again in a minute, or contact the admin.';
+  'Your Bansify Account is signed in, but Mail could not load your profile. Try again in a minute, or contact the admin.';
 
 test('Accounts sign-in URL preserves Mail destination and marks the return', () => {
   const result = new URL(
     buildSigninUrl(
-      'https://accounts.gothwadtech.com/signin?choose=1',
-      'https://mail.gothwadtech.com/?folder=inbox#message-1',
+      'https://accounts.bansifytech.com/signin?choose=1',
+      'https://mail.bansifytech.com/?folder=inbox#message-1',
     ),
   );
   const next = new URL(result.searchParams.get('next') || '');
 
-  assert.equal(result.origin, 'https://accounts.gothwadtech.com');
+  assert.equal(result.origin, 'https://accounts.bansifytech.com');
   assert.equal(result.pathname, '/signin');
   assert.equal(result.searchParams.get('choose'), '1');
-  assert.equal(next.origin, 'https://mail.gothwadtech.com');
+  assert.equal(next.origin, 'https://mail.bansifytech.com');
   assert.equal(next.searchParams.get('folder'), 'inbox');
   assert.equal(next.searchParams.get(AUTH_RETURN_PARAM), '1');
   assert.equal(next.hash, '#message-1');
 });
 
 test('return marker is detected and removed without losing other URL state', () => {
-  const returned = 'https://mail.gothwadtech.com/?folder=inbox&__mail_auth_return=1#message-1';
+  const returned = 'https://mail.bansifytech.com/?folder=inbox&__mail_auth_return=1#message-1';
   assert.equal(isAuthReturnUrl(returned), true);
 
   const clean = new URL(clearAuthReturnMarker(returned));
@@ -71,7 +71,7 @@ test('a 503 never redirects to Accounts, even if it carries a signinUrl', () => 
   }
 
   // Network errors (status 0) are local errors too.
-  const network = new ApiError(0, 'network', 'Cannot reach Gothwad Mail right now.');
+  const network = new ApiError(0, 'network', 'Cannot reach Bansify Mail right now.');
   assert.equal(classifySessionFailure(network, false).kind, 'error');
 });
 

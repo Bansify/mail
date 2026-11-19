@@ -1,20 +1,20 @@
 // =============================================================================
 // Session resolution: "who is this request for?"
 //
-// Source of truth = Gothwad Accounts (AUTH_HUB_URL). Mail never stores
+// Source of truth = Bansify Accounts (AUTH_HUB_URL). Mail never stores
 // passwords and never mints its own login.
 //
 //  1. Cookie path (normal web use): forward the browser's Cookie header to
 //     GET {AUTH_HUB_URL}/api/auth/me. Accounts sets the cookies on
-//     .gothwadtech.com, so they reach this Worker on mail.gothwadtech.com.
+//     .bansifytech.com, so they reach this Worker on mail.bansifytech.com.
 //  2. Bearer path (native clients, e.g. the Android app): GET
 //     {AUTH_HUB_URL}/api/oauth/userinfo with the access token. The token must
-//     have been minted for THIS app (client_id/aud = `gothwad-mail`) AND carry
-//     the `mail` scope. A token for another Gothwad app is a 403
+//     have been minted for THIS app (client_id/aud = `bansify-mail`) AND carry
+//     the `mail` scope. A token for another Bansify app is a 403
 //     `insufficient_scope`, never a session.
 //
 // AUTH_HUB_URL must be a host that reaches the Accounts Worker for a
-// server-to-server call (Accounts' Custom Domain, e.g. api.gothwadtech.com).
+// server-to-server call (Accounts' Custom Domain, e.g. api.bansifytech.com).
 // AUTH_SIGNIN_URL is used only for the browser-facing sign-in link; see
 // signinBaseUrl() below and the note in config.ts.
 //
@@ -40,8 +40,8 @@ export const ACCOUNTS_UNEXPECTED_RESPONSE = 'accounts_unexpected_response';
 export const ACCOUNTS_USER_INVALID = 'accounts_user_invalid';
 export const INSUFFICIENT_SCOPE = 'insufficient_scope';
 
-/** The OAuth client this Worker serves (Gothwad Accounts `ecosystem_apps`). */
-export const MAIL_OAUTH_CLIENT_ID = 'gothwad-mail';
+/** The OAuth client this Worker serves (Bansify Accounts `ecosystem_apps`). */
+export const MAIL_OAUTH_CLIENT_ID = 'bansify-mail';
 /** The scope that allows reading and sending a mailbox through this API. */
 export const MAIL_OAUTH_SCOPE = 'mail';
 
@@ -97,12 +97,12 @@ export function takeUpstreamCookies(request: Request): string[] {
 /** Re-exported for the account switcher (see accounts.ts): it must forward the
  * rotated Accounts cookies exactly like the session check does. */
 export function keepAccountsCookies(request: Request, res: Response): void {
-  // Only Accounts' own gothwad_* cookies. Anything else from upstream is ignored.
+  // Only Accounts' own bansify_* cookies. Anything else from upstream is ignored.
   // getSetCookie() gives each Set-Cookie separately (get() would join them).
   // Our worker type lib does not declare it yet, so we cast.
   const h = res.headers as Headers & { getSetCookie?: () => string[] };
   const all = h.getSetCookie ? h.getSetCookie() : [];
-  const cookies = all.filter((c) => /^gothwad_[a-z_]+=/i.test(c));
+  const cookies = all.filter((c) => /^bansify_[a-z_]+=/i.test(c));
   if (cookies.length > 0) upstreamCookies.set(request, cookies);
 }
 
@@ -160,14 +160,14 @@ const AUTH_UNAVAILABLE_MESSAGE = 'Accounts is not reachable right now.';
 const ACCOUNTS_UNEXPECTED_MESSAGE =
   'Accounts did not answer with a session Mail can read. This is an Accounts routing problem, not a signed-out user. Try again in a minute, or contact the admin.';
 const ACCOUNTS_USER_INVALID_MESSAGE =
-  'Your Gothwad Account is signed in, but Mail could not read your username. Try again in a minute, or contact the admin.';
+  'Your Bansify Account is signed in, but Mail could not read your username. Try again in a minute, or contact the admin.';
 
 async function resolveCookie(request: Request, cookie: string, config: Config): Promise<Session | null> {
   // The per-tab selector is what makes /u/0 and /u/1 independent: Accounts
   // resolves that slot and does NOT touch the browser-wide active cookie.
   const selector = authUserFromRequest(request);
   const headers: Record<string, string> = { cookie, accept: 'application/json' };
-  if (selector) headers['x-gothwad-authuser'] = selector;
+  if (selector) headers['x-bansify-authuser'] = selector;
 
   const res = await upstream(`${config.authHubUrl}/api/auth/me`, headers);
   keepAccountsCookies(request, res);
@@ -252,7 +252,7 @@ function grantedScopes(body: OAuthUserInfoBody): string[] {
 }
 
 /**
- * Rejects a token that is valid for Accounts but was not issued to Gothwad Mail.
+ * Rejects a token that is valid for Accounts but was not issued to Bansify Mail.
  *
  * WHY this is not a normal 401: the token IS valid, it simply is not allowed
  * here. A 401 would make the native client throw the token away and ask the user
@@ -266,13 +266,13 @@ function assertMailToken(body: OAuthUserInfoBody, res: Response): void {
 
   if (clientId !== MAIL_OAUTH_CLIENT_ID && audience !== MAIL_OAUTH_CLIENT_ID) {
     warnUpstreamFailure(INSUFFICIENT_SCOPE, res);
-    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Gothwad Mail.', {
+    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Bansify Mail.', {
       requiredClient: MAIL_OAUTH_CLIENT_ID,
     });
   }
   if (!scopes.includes(MAIL_OAUTH_SCOPE)) {
     warnUpstreamFailure(INSUFFICIENT_SCOPE, res);
-    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Gothwad Mail.', {
+    throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Bansify Mail.', {
       requiredScope: MAIL_OAUTH_SCOPE,
     });
   }
@@ -419,7 +419,7 @@ async function upstream(url: string, headers: Record<string, string>): Promise<R
  * This is a BROWSER link, not a server-side call, so it uses AUTH_SIGNIN_URL
  * (the Accounts host people sign in on). AUTH_HUB_URL is the server-to-server
  * host; sending users there would work only by accident, and on a Custom
- * Domain such as api.gothwadtech.com it would not be the sign-in page.
+ * Domain such as api.bansifytech.com it would not be the sign-in page.
  */
 export function signinBaseUrl(config: Config): string {
   return `${config.authSigninUrl}/signin?choose=1`;
