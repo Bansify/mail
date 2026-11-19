@@ -2,7 +2,7 @@
 // Account menu UI: the shared Accounts widget, wired to real Mail state.
 //
 // Mail no longer draws its own switcher. Tapping the avatar loads
-// `window.BansifyAccountMenu` (Accounts' one-and-only Google-style sheet) and
+// `window.GothwadAccountMenu` (Accounts' one-and-only Google-style sheet) and
 // hands it Mail's live data and handlers. The tests below install Mail's local
 // stand-in for that module — same `open(state, opts)` contract, same callbacks —
 // so the whole path runs for real: header -> loader -> widget -> Mail handlers.
@@ -79,8 +79,8 @@ test('the shared widget gets every account, badge, theme and handler from Mail',
 
   // The sheet is Google's own: hero name, both accounts, add-account row.
   const sheet = sheetText();
-  assert.ok(sheet.includes('alice@bansifytech.com'), 'active account in the hero');
-  assert.ok(sheet.includes('bob@bansifytech.com'), 'second account listed');
+  assert.ok(sheet.includes('alice@bansify.com'), 'active account in the hero');
+  assert.ok(sheet.includes('bob@bansify.com'), 'second account listed');
   assert.ok(sheet.includes('Add another account'));
 
   await unmountApp(root);
@@ -99,7 +99,7 @@ test('switching from the widget repaints the new mailbox and never mixes the two
   const observer = new MutationObserver(() => frames.push(text()));
   observer.observe(document.getElementById('root')!, { childList: true, subtree: true, characterData: true });
 
-  const clicked = await clickInSheet((label) => label.includes('bob@bansifytech.com'));
+  const clicked = await clickInSheet((label) => label.includes('bob@bansify.com'));
   assert.equal(clicked, true, 'bob row is clickable inside the widget');
   await waitFor(() => text().includes(BOB_ROW), "bob's mailbox painted");
   observer.disconnect();
@@ -180,12 +180,12 @@ test('when the widget cannot load, Mail keeps a working built-in menu', async ()
   assert.ok(fallback, 'fallback is a labelled dialog');
   assert.equal(fallback.getAttribute('aria-modal'), 'true');
   assert.match(fallback.className, /env\(safe-area-inset-bottom\)/, 'safe area honoured');
-  assert.ok(text().includes('bob@bansifytech.com'), 'every account is still listed');
+  assert.ok(text().includes('bob@bansify.com'), 'every account is still listed');
   assert.ok(text().includes('Sign out of all accounts'), 'sign-out-all is available');
 
   // It also really switches: the fallback must never be a dead end.
   const row = [...fallback.querySelectorAll('button')].find(
-    (b) => b.textContent?.includes('bob@bansifytech.com') && b.getAttribute('aria-current') === null
+    (b) => b.textContent?.includes('bob@bansify.com') && b.getAttribute('aria-current') === null
   );
   assert.ok(row, 'inactive row is clickable');
   await act(async () => {
@@ -255,7 +255,7 @@ test('signing out of the shown account hops to the one that is left', async () =
   await openSheet();
   await waitFor(() => isWidgetSheetOpen(), 'sheet open');
   await clickInSheet((label) => label === 'Manage accounts');
-  await waitFor(() => isWidgetSheetOpen() && sheetText().includes('Sign out of alice@bansifytech.com'), 'sign-out row');
+  await waitFor(() => isWidgetSheetOpen() && sheetText().includes('Sign out of alice@bansify.com'), 'sign-out row');
 
   const shadow = sheetShadow()!;
   const signOut = shadow.querySelector<HTMLElement>('[data-signout-active]');
@@ -340,7 +340,7 @@ test('no account data is written to localStorage or sessionStorage', async () =>
       .map((key) => `${key}=${storage.getItem(key)}`)
       .join('|');
   for (const blob of [dump(window.localStorage), dump(window.sessionStorage)]) {
-    assert.equal(/alice|bob|bansifytech\.com/i.test(blob), false, 'no account identity in web storage');
+    assert.equal(/alice|bob|bansify\.com/i.test(blob), false, 'no account identity in web storage');
     assert.equal(/"accounts"|activeId|authuser/.test(blob), false, 'no account list in web storage');
   }
 

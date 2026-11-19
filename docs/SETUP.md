@@ -3,7 +3,7 @@
 These are the steps only a person can do: dashboards, DNS, routing and secrets. An agent must
 not run them, and must not ask for live keys in chat.
 
-Gothwad Mail is **100% Cloudflare native**: Workers + D1. There is no Supabase project, no
+Bansify Mail is **100% Cloudflare native**: Workers + D1. There is no Supabase project, no
 database URL and no database key to paste anywhere. Replace placeholders like `YOUR_DOMAIN`
 and `re_...` with your own values.
 
@@ -13,19 +13,19 @@ and `re_...` with your own values.
 
 | Name | Example | Where it lives |
 | --- | --- | --- |
-| `APP_DOMAIN` | `gothwadtech.com` | `wrangler.toml` `[vars]` (public) |
-| `AUTH_HUB_URL` | `https://api.gothwadtech.com` | `wrangler.toml` `[vars]` (public) |
-| `AUTH_SIGNIN_URL` | `https://accounts.gothwadtech.com` | `wrangler.toml` `[vars]` (public) |
-| `MAIL_URL` | `https://mail.gothwadtech.com` | `wrangler.toml` `[vars]` (public) |
+| `APP_DOMAIN` | `bansify.com` | `wrangler.toml` `[vars]` (public) |
+| `AUTH_HUB_URL` | `https://api.bansify.com` | `wrangler.toml` `[vars]` (public) |
+| `AUTH_SIGNIN_URL` | `https://accounts.bansify.com` | `wrangler.toml` `[vars]` (public) |
+| `MAIL_URL` | `https://mail.bansify.com` | `wrangler.toml` `[vars]` (public) |
 | D1 database | `mail` (binding `DB`) | `wrangler.toml` `[[d1_databases]]` (public) |
 | `ACCOUNTS_INTERNAL_TOKEN` | Same value as Accounts' `MAIL_INTERNAL_TOKEN` | **secret** |
 | `RESEND_API_KEY` | `re_...` | **secret** |
 
 `AUTH_HUB_URL` is the base for **every server-side Accounts call** (`/api/auth/me`,
 `/api/oauth/userinfo`, `/api/internal/usernames/:username`), so it must be a host that reaches
-the Accounts Worker: its **Custom Domain** `https://api.gothwadtech.com`. Cloudflare does not
+the Accounts Worker: its **Custom Domain** `https://api.bansify.com`. Cloudflare does not
 invoke a same-zone Worker behind a Route for a server-to-server call, so
-`https://accounts.gothwadtech.com` answers the Pages SPA HTML there and Mail reports 503
+`https://accounts.bansify.com` answers the Pages SPA HTML there and Mail reports 503
 `accounts_unexpected_response`. `AUTH_SIGNIN_URL` is used only for browser-facing links (the
 sign-in redirect and `accountUrl`); it is optional and falls back to `AUTH_HUB_URL`.
 
@@ -117,8 +117,8 @@ secrets — see section 6.
 The cookie SSO flow needs nothing in Accounts beyond the shared internal token. The
 `gothwad-mail` OAuth client is only needed for a future code flow, and those callbacks are:
 
-- `https://mail.gothwadtech.com/auth/callback`
-- `https://mail.gothwadtech.com/oauth/callback`
+- `https://mail.bansify.com/auth/callback`
+- `https://mail.bansify.com/oauth/callback`
 
 Accounts v2 stores this in its own D1 (`ecosystem_apps`). A human may review and run the
 Accounts-side SQL; an agent must not run it. Never point Mail at the Accounts database.
@@ -134,7 +134,7 @@ npm run worker:deploy
 Verify:
 
 ```bash
-curl -s https://mail.gothwadtech.com/api/health
+curl -s https://mail.bansify.com/api/health
 ```
 
 Expected shape (booleans and counts only — no keys, no values):
@@ -157,7 +157,7 @@ Expected shape (booleans and counts only — no keys, no values):
 ### Route and Email Routing (dashboard)
 
 1. **Workers & Pages → `mail` → Settings → Domains & Routes**: keep the route
-   `mail.gothwadtech.com/api/*` → `mail`.
+   `mail.bansify.com/api/*` → `mail`.
 2. **Email Routing → Routes → Catch-all**: send `*@YOUR_DOMAIN` to Worker `mail`.
 3. Keep Email Routing off until the Accounts username endpoint is confirmed working.
 
@@ -281,7 +281,7 @@ npx wrangler deploy --config worker/wrangler.toml --dry-run
 
 After the D1 version is live and verified:
 
-1. Confirm `https://mail.gothwadtech.com/api/health` has **no** Supabase field and shows
+1. Confirm `https://mail.bansify.com/api/health` has **no** Supabase field and shows
    `engine: cloudflare-d1-native`.
 2. In the Supabase dashboard, review and delete the old **Mail** project (never the Accounts
    project).
@@ -298,9 +298,9 @@ After the D1 version is live and verified:
       and the real UUID `87854cea-7feb-46f3-ab99-2a2137f31105`
 - [ ] Worker `mail` has exactly two secrets: `ACCOUNTS_INTERNAL_TOKEN`, `RESEND_API_KEY`
 - [ ] `ACCOUNTS_INTERNAL_TOKEN` equals Accounts' `MAIL_INTERNAL_TOKEN`
-- [ ] `AUTH_HUB_URL = https://api.gothwadtech.com`, `AUTH_SIGNIN_URL = https://accounts.gothwadtech.com`
+- [ ] `AUTH_HUB_URL = https://api.bansify.com`, `AUTH_SIGNIN_URL = https://accounts.bansify.com`
 - [ ] `GET /api/health` → `database.ready: true`, all three `configured` booleans `true`
-- [ ] Route `mail.gothwadtech.com/api/*` → Worker `mail`
+- [ ] Route `mail.bansify.com/api/*` → Worker `mail`
 - [ ] Email Routing catch-all `*@YOUR_DOMAIN` → Worker `mail`
 - [ ] Sign in, open a message, send a test mail (Sent copy appears)
 - [ ] Settings → change retention to 1,500, see the storage bar update

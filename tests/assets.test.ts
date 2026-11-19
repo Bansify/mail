@@ -85,8 +85,8 @@ test('Cloudflare Pages rewrites deep paths to the SPA shell', () => {
 test('the Android OAuth bridge and its app-link file are shipped', () => {
   const bridge = read('public/oauth/callback/index.html');
   // The bridge must hand the untouched query back to the app's own scheme.
-  assert.match(bridge, /com\.bansify\.mail:\/oauth\/callback/);
-  assert.match(bridge, /package=com\.bansify\.mail/, 'the intent:// fallback names the package');
+  assert.match(bridge, /com\.gothwad\.mail:\/oauth\/callback/);
+  assert.match(bridge, /package=com\.gothwad\.mail/, 'the intent:// fallback names the package');
   assert.equal(bridge.includes('oauth/token'), false, 'the bridge never exchanges the code itself');
 
   const links = JSON.parse(read('public/.well-known/assetlinks.json')) as Array<{
@@ -94,7 +94,7 @@ test('the Android OAuth bridge and its app-link file are shipped', () => {
     target: { namespace: string; package_name: string; sha256_cert_fingerprints: string[] };
   }>;
   assert.equal(links.length, 1);
-  assert.equal(links[0].target.package_name, 'com.bansify.mail');
+  assert.equal(links[0].target.package_name, 'com.gothwad.mail');
   assert.equal(links[0].target.namespace, 'android_app');
   assert.match(links[0].target.sha256_cert_fingerprints[0], /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
 

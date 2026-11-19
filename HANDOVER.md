@@ -1,11 +1,23 @@
 # HANDOVER.md — where this repository stands
 
-Last updated: 2026-10-24. Read this first if you are picking the work up.
+Last updated: 2026-10-20. Read this first if you are picking the work up.
 
-## Latest: native app backend (OAuth, search, batch, App Links)
+## Latest: the app is called Bansify Mail, the wire format is unchanged
+
+Display text, `<title>`, the manifest, the OAuth bridge page and the docs now say **Bansify**, and
+the domain config points at `bansify.com` (`api.` / `accounts.` / `mail.`). The identifiers that
+Accounts actually issues were deliberately **not** renamed: OAuth `client_id` `gothwad-mail`,
+`X-Gothwad-Authuser`, the `^gothwad_[a-z_]+=` cookie filter, `com.gothwad.mail` and its
+`:/oauth/callback` scheme. Renaming them in Mail alone breaks auth — which is what the merged
+`rename-app-to-bansify` PR (#17, `9e92a89`) did, and what this branch restores.
+The account-widget global is read under both names
+(`BansifyAccountMenu` first, `GothwadAccountMenu` fallback), and no browser code hardcodes an
+Accounts host any more (`mailApi.reauthUrl()` takes the session's `accountsWebOrigin`).
+
+## Previous: native app backend (OAuth, search, batch, App Links)
 
 Bearer tokens are now checked properly: the token must belong to `gothwad-mail` **and** carry the
-`mail` scope, otherwise `403 insufficient_scope` (a token for another Gothwad app can no longer
+`mail` scope, otherwise `403 insufficient_scope` (a token for another Bansify app can no longer
 open a mailbox). Bearer sessions carry one account so unread metadata works. The list endpoint
 gained `q`/`unread`/`starred`/`hasAttachment`/`folder=all`, messages can be restored from Trash,
 and there are batch actions plus Empty Trash. `/oauth/callback` is a static bridge to
@@ -59,7 +71,7 @@ UI tests need the local API: `npm run preview:api` (port 8787) before `npm run t
 * The local timing numbers (identity ≈ 0.9–1.1 ms vs full ≈ 1.2–2.5 ms; shell at 138 ms while the
   metadata was held for 2 s) come from `node:sqlite`, not from Cloudflare D1. Do not quote a
   production latency figure until it is measured in production.
-* `GothwadTech/accounts` was not modified. Mail keeps compatibility with the existing Accounts
+* `Bansify/accounts` was not modified. Mail keeps compatibility with the existing Accounts
   response contract.
 
 ## Deploy steps (owner)

@@ -1,15 +1,16 @@
 // =============================================================================
 // Worker config + env typing.
 //
-// Why: the domain and URLs come from env so the same code works when the
-// company moves from bansifytech.com to bansify.in. We only keep fallback
-// defaults here so a missing var does not break the Worker silently.
+// Why: the domain and URLs come from env, so moving Mail to another domain is
+// a `wrangler.toml` change and not a code change. The defaults below only keep
+// a bare deployment (e.g. `wrangler dev`) from breaking silently; the live
+// deployment always sets the real values.
 //
 // Two Accounts URLs, because Accounts answers differently per host:
 //   AUTH_HUB_URL     base for every SERVER-side fetch (/api/auth/me,
 //                    /api/oauth/userinfo, /api/internal/usernames/:username).
 //                    This must be a host that reaches the Accounts Worker,
-//                    e.g. its Custom Domain api.bansifytech.com.
+//                    e.g. its Custom Domain api.bansify.com.
 //   AUTH_SIGNIN_URL  base for browser-facing links only (sign-in redirect and
 //                    accountUrl). Cloudflare does not run a same-zone Worker
 //                    behind a Pages host for a server-to-server call, so the
@@ -71,9 +72,9 @@ export interface Config {
   devAuthUsername: string | null;
 }
 
-const DEFAULT_APP_DOMAIN = 'bansifytech.com';
-const DEFAULT_AUTH_HUB_URL = 'https://accounts.bansifytech.com';
-const DEFAULT_MAIL_URL = 'https://mail.bansifytech.com';
+const DEFAULT_APP_DOMAIN = 'bansify.com';
+const DEFAULT_AUTH_HUB_URL = 'https://api.bansify.com';
+const DEFAULT_MAIL_URL = 'https://mail.bansify.com';
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '');

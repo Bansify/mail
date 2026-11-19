@@ -3,8 +3,12 @@
 //
 // The same Google-style sheet is used by Accounts, Mail, Store and Console, so
 // Mail must not ship a second, slightly different menu. Accounts publishes it at
-// `${accountsWebOrigin}/widget/account-menu.js`; that module defines
-// `window.BansifyAccountMenu` with `open / update / close / isOpen`.
+// `${accountsWebOrigin}/widget/account-menu.js`; that module defines the global
+// account menu with `open / update / close / isOpen`.
+//
+// The global's NAME is a wire detail shared with Accounts, which still publishes
+// `window.GothwadAccountMenu`. Both names are accepted, new one first, so Mail
+// works whether or not Accounts has renamed it yet.
 //
 // Design notes:
 //   - the origin comes from the session (`accountsWebOrigin`), never from a
@@ -41,8 +45,30 @@ let lastError: string | null = null;
  * itself; in a test harness (jsdom) the page globals live on `globalThis.window`,
  * so both are checked and the page one wins.
  */
-type WidgetGlobal = { BansifyAccountMenu?: AccountWidget; window?: WidgetGlobal };
+type WidgetGlobal = {
+  BansifyAccountMenu?: AccountWidget;
+  GothwadAccountMenu?: AccountWidget;
+  window?: WidgetGlobal;
+};
 const menuGlobal = (): WidgetGlobal => (globalThis as WidgetGlobal).window ?? (globalThis as WidgetGlobal);
+
+/**
+ * The global names the widget may register under, preferred first. Accounts
+ * deployed today still sets the legacy name, so reading both keeps the sheet
+ * working across the rename instead of requiring a synchronised release.
+ */
+export const WIDGET_GLOBAL_KEYS = ['BansifyAccountMenu', 'GothwadAccountMenu'] as const;
+export type WidgetGlobalKey = (typeof WIDGET_GLOBAL_KEYS)[number];
+
+/** First usable menu object on an object (module namespace or page global). */
+export function pickAccountWidget(source: WidgetGlobal | null | undefined): AccountWidget | null {
+  if (!source) return null;
+  for (const key of WIDGET_GLOBAL_KEYS) {
+    const candidate = source[key];
+    if (candidate && typeof candidate === 'object') return candidate;
+  }
+  return null;
+}
 
 /** Trims trailing slashes; returns '' for an unusable value. */
 function normalizeOrigin(raw: string | null | undefined): string {
@@ -71,8 +97,7 @@ export function accountWidgetUrl(accountsWebOrigin: string): string {
 /** The widget module, only if it has already loaded (never triggers a fetch). */
 export function loadedAccountWidget(): AccountWidget | null {
   if (loaded) return loaded;
-  const fromWindow = menuGlobal().BansifyAccountMenu;
-  return fromWindow && typeof fromWindow === 'object' ? fromWindow : null;
+  return pickAccountWidget(menuGlobal());
 }
 
 /** Why the last load failed, for the message the fallback menu shows. */
@@ -82,10 +107,7 @@ export function accountWidgetError(): string | null {
 
 /** True when the widget namespace (or window global) looks usable. */
 function usable(mod: unknown): AccountWidget | null {
-  const candidate =
-    (mod as { BansifyAccountMenu?: AccountWidget } | null)?.BansifyAccountMenu ??
-    menuGlobal().BansifyAccountMenu;
-  return candidate && typeof candidate === 'object' ? candidate : null;
+  return pickAccountWidget(mod as WidgetGlobal | null) ?? pickAccountWidget(menuGlobal());
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -199,8 +221,10 @@ export function resetAccountWidgetForTests(): void {
   loaded = null;
   inFlight = null;
   lastError = null;
-  delete menuGlobal().BansifyAccountMenu;
-  delete (globalThis as WidgetGlobal).BansifyAccountMenu;
+  for (const key of WIDGET_GLOBAL_KEYS) {
+    delete menuGlobal()[key];
+    delete (globalThis as WidgetGlobal)[key];
+  }
 }
 
 /** Test-only: pretend the module is already cached. */

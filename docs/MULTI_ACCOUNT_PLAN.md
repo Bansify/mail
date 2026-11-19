@@ -1,7 +1,7 @@
 # Multi-account (Google-style account switcher) — plan
 
 **Goal:** Mail should behave like Google's account switcher. Both accounts that are signed in at
-`accounts.gothwadtech.com` appear in one profile section, with avatars and unread counts, and
+`accounts.bansify.com` appear in one profile section, with avatars and unread counts, and
 tapping one switches the whole app to that mailbox **in about a second** — no password, no
 sign-out, no full page reload wherever we can avoid it.
 
@@ -29,13 +29,13 @@ Two consequences worth stating up front:
 
 ## 2. Target behaviour (Google parity)
 
-| Google | Gothwad Mail after this work |
+| Google | Bansify Mail after this work |
 | --- | --- |
 | Avatar/initial at top right → account list | Same, in the existing `AccountSheet` and the sidebar avatar |
 | Each row: avatar, name, email, unread badge | Same, unread count from Mail's D1, per account |
 | Tap a row → that account's Gmail opens instantly | Tap → Mail reloads caches for that account, list paints in ~1s |
-| "Add another account" → sign-in page, account is added | `accounts.gothwadtech.com/signin?choose=1&add=1`, returns to Mail |
-| "Sign out" per row, "Manage your Google Account" | Per-row sign out, plus the existing "Manage Gothwad Account" link |
+| "Add another account" → sign-in page, account is added | `accounts.bansify.com/signin?choose=1&add=1`, returns to Mail |
+| "Sign out" per row, "Manage your Google Account" | Per-row sign out, plus the existing "Manage Bansify Account" link |
 | No password to switch; account stays signed in | Session cookie per account, active slot cookie |
 | Switcher never shows a dead account | Accounts verifies each slot on every list call |
 
@@ -101,7 +101,7 @@ Rules for B1:
 **B3. Switcher UI** (`src/components/AccountSheet.tsx`, `src/components/Sidebar.tsx`,
 `src/components/Header.tsx`, `src/components/MobileDrawer.tsx`)
 
-* New "Accounts" list at the top of `AccountSheet`: avatar circle, name, `username@gothwadtech.com`,
+* New "Accounts" list at the top of `AccountSheet`: avatar circle, name, `username@bansify.com`,
   unread pill (`bg-[#0494f4]`, white text), check-mark on the active row, and a subtle
   "Switching…" spinner on the row being switched. Rows are ≥ 56px tall.
 * Footer: `+ Add another account` (opens `/api/mail/accounts/add`) and, per row on hover/long
@@ -124,7 +124,7 @@ Rules for B1:
 
 **B5. Polish**
 
-* Tab title reflects the active account's unread count only (`(3) Gothwad Mail`), so a glance at
+* Tab title reflects the active account's unread count only (`(3) Bansify Mail`), so a glance at
   the tab never mixes mailboxes.
 * Draft switching: an open compose draft is per account, so it must be closed (not silently
   carried) on switch, with the confirmation kept to a single `window.confirm` at most — or simply
@@ -137,7 +137,7 @@ Rules for B1:
 | Risk | Mitigation |
 | --- | --- |
 | Tampered account list shows a fake mailbox | List cookie is HMAC-signed; Mail only uses usernames Accounts returns, and only after Accounts verifies each session |
-| Switching without authentication | `POST /api/auth/switch` re-validates the target session and requires a Gothwad Origin |
+| Switching without authentication | `POST /api/auth/switch` re-validates the target session and requires a Bansify Origin |
 | Cross-account data leak via caches | Every cache is cleared on switch, **before** the first paint; `/api/*` never cached by the SW |
 | XSS steals all accounts | Nothing in `localStorage`; all session material is `HttpOnly` cookies |
 | Enumeration of other users' unread counts | Unread counts are computed only for usernames in the server-verified list |
@@ -150,7 +150,7 @@ Rules for B1:
    with local fixtures before Accounts ships; ships safely to production on its own.
 3. **B3 + B4** — switcher UI and instant switch.
 4. **B5** — polish, then a full pass on mobile and desktop.
-5. Live verification with two real accounts at `accounts.gothwadtech.com`, then a walkthrough.
+5. Live verification with two real accounts at `accounts.bansify.com`, then a walkthrough.
 
 ## 6. Acceptance tests (must all pass before "done")
 
@@ -188,7 +188,7 @@ single-import and error paths), `tests/language.test.ts` (English-only repositor
 ### Known gap, deliberately left open
 
 Google's account sheet supports `↑/↓` + `Enter` inside the list. That keyboard model belongs to
-the sheet, which now lives in `GothwadTech/accounts/web/widget/account-menu.js`; Mail cannot add it
+the sheet, which now lives in `Bansify/accounts/web/widget/account-menu.js`; Mail cannot add it
 without patching another repository's DOM. Mail's own fallback sheet is fully keyboard reachable,
 and the extension point is written down in `docs/ACCOUNTS_AGENT_PROMPT.md` (pending Accounts
 change) rather than hacked into Mail.

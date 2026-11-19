@@ -41,7 +41,7 @@ const accounts = [
     name: 'Alice Sharma',
     firstName: 'Alice',
     lastName: 'Sharma',
-    email: 'alice@bansifytech.com',
+    email: 'alice@bansify.com',
     avatarUrl: 'https://cdn.test/alice.png',
     accountUrl: 'https://accounts.test/u/0/me',
     lastUsedAt: null,
@@ -53,7 +53,7 @@ const accounts = [
     name: 'Bob Verma',
     firstName: 'Bob',
     lastName: 'Verma',
-    email: 'bob@bansifytech.com',
+    email: 'bob@bansify.com',
     avatarUrl: null,
     accountUrl: 'https://accounts.test/u/1/me',
     lastUsedAt: null,
@@ -67,7 +67,7 @@ function args(overrides: Partial<BuildMenuArgs> = {}): BuildMenuArgs {
       name: 'Alice Sharma',
       firstName: 'Alice',
       lastName: 'Sharma',
-      email: 'alice@bansifytech.com',
+      email: 'alice@bansify.com',
       avatarUrl: 'https://cdn.test/alice.png',
     },
     accounts,
@@ -204,4 +204,18 @@ test('a cached module is never imported twice', async () => {
   assert.equal(first, second);
   assert.equal(first !== null, true);
   resetAccountWidgetForTests();
+});
+
+test('the widget global is read under the new name and the legacy name', () => {
+  resetAccountWidgetForTests();
+  const legacy = { open: () => undefined };
+  (globalThis as { GothwadAccountMenu?: unknown }).GothwadAccountMenu = legacy;
+  assert.equal(loadedAccountWidget(), legacy, 'the legacy global Accounts ships today still works');
+
+  const current = { open: () => undefined };
+  (globalThis as { BansifyAccountMenu?: unknown }).BansifyAccountMenu = current;
+  assert.equal(loadedAccountWidget(), current, 'the renamed global wins once Accounts publishes it');
+
+  resetAccountWidgetForTests();
+  assert.equal(loadedAccountWidget(), null, 'no global at all means "not loaded yet"');
 });

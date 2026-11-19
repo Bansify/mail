@@ -84,18 +84,18 @@ After a deploy, `GET /api/health` shows live D1 readiness and which settings exi
 only:
 
 ```json
-{"ok":true,"service":"bansify-mail","engine":"cloudflare-d1-native",
+{"ok":true,"service":"gothwad-mail","engine":"cloudflare-d1-native",
  "environment":"production",
  "database":{"bound":true,"ready":true,"tables":2},
  "configured":{"d1Binding":true,"accountsInternalToken":true,"resendApiKey":true}}
 ```
 
 `AUTH_HUB_URL` is the base for every server-side Accounts call and must reach the Accounts
-Worker (`https://api.bansifytech.com`, its Custom Domain). `AUTH_SIGNIN_URL` is used only for
+Worker (`https://api.bansify.com`, its Custom Domain). `AUTH_SIGNIN_URL` is used only for
 browser-facing links — the sign-in redirect and `accountUrl` — and falls back to
 `AUTH_HUB_URL` when unset.
 
-Nothing in the code hardcodes the domain. Fallback defaults may use `bansifytech.com`.
+Nothing in the code hardcodes the domain. Fallback defaults may use `bansify.com`.
 
 ## Deploy
 

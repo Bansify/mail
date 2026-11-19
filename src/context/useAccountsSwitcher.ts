@@ -10,7 +10,7 @@
 //      active account and rotates the slot cookies, then the session reconciles
 //
 // Reading a slot never touches other tabs: every call carries this tab's
-// X-Bansify-Authuser, and the session route resolves that slot server-side.
+// X-Gothwad-Authuser, and the session route resolves that slot server-side.
 // =============================================================================
 
 import { useCallback, useEffect, useState } from 'react';
@@ -29,6 +29,8 @@ interface UseAccountsSwitcherOptions {
   onSessionChanged: () => Promise<void>;
   /** Paint the target account immediately, before the network answers. */
   onSwitchAccount: (account: AccountSummary, all: AccountSummary[], unread: Record<string, number>) => void;
+  /** Accounts web host from the session; used only for the re-auth fallback. */
+  accountsWebOrigin?: string;
   initial?: AccountsInfo | null;
 }
 
@@ -39,6 +41,7 @@ export function useAccountsSwitcher({
   resetForAccountSwitch,
   onSessionChanged,
   onSwitchAccount,
+  accountsWebOrigin = '',
   initial,
 }: UseAccountsSwitcherOptions) {
   const [accounts, setAccounts] = useState<AccountSummary[]>(initial?.accounts ?? []);
@@ -110,7 +113,17 @@ export function useAccountsSwitcher({
         if (err instanceof ApiError && err.status === 409) {
           // That slot's session is gone. Send the user to re-auth exactly that
           // account, keeping this tab's URL as the return target.
-          const url = err.reauthUrl ?? mailApi.reauthUrl(target.authuser, target.username);
+          // Prefer the Worker's config-built link; fall back to the session's
+          // Accounts origin. Without either we show the error instead of
+          // sending the user to a guessed host.
+          const fallback = accountsWebOrigin
+            ? mailApi.reauthUrl(accountsWebOrigin, target.authuser, target.username)
+            : '';
+          const url = err.reauthUrl ?? fallback;
+          if (!url) {
+            showToast(errorText(err));
+            return false;
+          }
           window.location.assign(url);
           return false;
         }
@@ -123,6 +136,7 @@ export function useAccountsSwitcher({
     [
       accounts,
       activeAccountId,
+      accountsWebOrigin,
       accountUnread,
       currentFolder,
       onSessionChanged,
@@ -167,6 +181,7 @@ export function useAccountsSwitcher({
     [
       accounts,
       activeAccountId,
+      accountsWebOrigin,
       currentFolder,
       onSessionChanged,
       onSwitchAccount,

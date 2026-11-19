@@ -7,7 +7,7 @@
 //   /?login=1&authuser=1         Gmail's post-sign-in URL
 //
 // The number in the URL is the ONLY source of truth for which account a tab is
-// showing. Every API call sends it as `X-Bansify-Authuser`, so two tabs on
+// showing. Every API call sends it as `X-Gothwad-Authuser`, so two tabs on
 // /u/0/ and /u/1/ read and send as two different accounts even though they share
 // one cookie jar. Nothing here is stored in localStorage/sessionStorage: a tab's
 // identity is in its URL, so a duplicate tab and Back/Forward keep working.
@@ -15,7 +15,7 @@
 
 import type { EmailFolder } from '../types/email';
 
-export const AUTHUSER_HEADER = 'X-Bansify-Authuser';
+export const AUTHUSER_HEADER = 'X-Gothwad-Authuser';
 export const MAX_AUTHUSER = 5;
 
 const FOLDERS: readonly EmailFolder[] = ['inbox', 'starred', 'sent', 'drafts', 'trash'];

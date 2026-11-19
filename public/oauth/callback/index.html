@@ -96,7 +96,7 @@
       </div>
       <h1>Opening Bansify Mail</h1>
       <p id="status">Handing this sign-in back to the Mail app…</p>
-      <a class="button" id="open-app" href="com.bansify.mail:/oauth/callback">Open the Mail app</a>
+      <a class="button" id="open-app" href="com.gothwad.mail:/oauth/callback">Open the Mail app</a>
       <a class="secondary" id="open-web" href="/">Continue in the browser instead</a>
     </main>
 
@@ -109,7 +109,7 @@
       // the code: it only moves the whole query string into the app's custom
       // scheme, so the app can exchange it over its own PKCE verifier.
       //
-      //  1. plain custom-scheme link (`com.bansify.mail:/oauth/callback?...`)
+      //  1. plain custom-scheme link (`com.gothwad.mail:/oauth/callback?...`)
       //     works from any browser and any app that registered the scheme;
       //  2. Chrome on Android also understands an `intent://` URL, which skips
       //     the app chooser; it is tried first there.
@@ -121,7 +121,7 @@
         var SEARCH = window.location.search || '';
         var HASH = window.location.hash || '';
         var TAIL = SEARCH + HASH;
-        var SCHEME = 'com.bansify.mail:/oauth/callback';
+        var SCHEME = 'com.gothwad.mail:/oauth/callback';
         var HTTPS = window.location.origin + '/oauth/callback';
         var ua = navigator.userAgent || '';
         var isAndroid = /Android/i.test(ua);
@@ -144,9 +144,9 @@
         }
 
         var intent =
-          'intent://mail.bansifytech.com/oauth/callback' +
+          'intent://mail.bansify.com/oauth/callback' +
           TAIL +
-          '#Intent;scheme=https;package=com.bansify.mail;' +
+          '#Intent;scheme=https;package=com.gothwad.mail;' +
           'action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 
         // A visible fallback first: if the automatic hop is blocked, the button

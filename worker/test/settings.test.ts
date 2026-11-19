@@ -60,7 +60,7 @@ test('PATCH settings validates the limit and needs our origin', async () => {
   const noOrigin = await worker.fetch(
     req('/api/mail/settings', {
       method: 'PATCH',
-      cookie: 'bansify_at=good',
+      cookie: 'gothwad_at=good',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ retentionLimit: 1500 }),
     }),

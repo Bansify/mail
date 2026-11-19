@@ -88,7 +88,8 @@ export const MailProvider: React.FC<{
   // Theme: strictly light (#ffffff) or dark (#212121)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {
-      const saved = localStorage.getItem('bansify_mail_theme');
+      // The old key is still read once, so a rename cannot reset a preference.
+      const saved = localStorage.getItem('bansify_mail_theme') ?? localStorage.getItem('gothwad_mail_theme');
       if (saved === 'dark' || saved === 'light') return saved;
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return 'dark';
@@ -168,6 +169,7 @@ export const MailProvider: React.FC<{
     resetForAccountSwitch: mailbox.resetForAccountSwitch,
     onSessionChanged,
     onSwitchAccount,
+    accountsWebOrigin,
     initial: { activeId, authuser, accounts: initialAccounts, unread: initialUnread ?? {} },
   });
 

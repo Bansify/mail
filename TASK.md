@@ -2,24 +2,65 @@
 
 Updated every session. Newest first.
 
+## 2026-10-20 — Rebrand to Bansify, without touching what Accounts issues
+
+**Owner request:** the repos moved from `GothwadTech` to `Bansify`, so the product should say
+Bansify everywhere a person reads it — while the live `Bansify/accounts` keeps the same
+identifiers. **Note:** #17 (`rename-app-to-bansify`) is already in `main` (`9e92a89`); it renamed
+the wire identifiers, so `main` currently asks Accounts for an app it has never heard of. This
+branch keeps #17's brand text and puts the identifiers back.
+
+| Kind of string | Example | Decision |
+| --- | --- | --- |
+| Brand / display text | `Gothwad Mail`, `Checking your Gothwad account`, `<title>`, manifest, apple title, `ecosystemName` | **Bansify** |
+| Wire identifiers owned by Accounts | `gothwad-mail` (`client_id`), `X-Gothwad-Authuser`, `^gothwad_[a-z_]+=`, `com.gothwad.mail` | **unchanged** |
+| Domains | `APP_DOMAIN`, `AUTH_HUB_URL`, `AUTH_SIGNIN_URL`, `MAIL_URL` | `bansify.com` (`api.` / `accounts.` / `mail.`) |
+| Repo / npm identity | `GothwadTech/mail` | `Bansify/mail`, `bansify-mail` |
+
+Accounts' `migrations/0014_first_party_native.sql` registers the mail client as `gothwad-mail`
+with package `com.gothwad.mail`, compares `X-Gothwad-Authuser` and forwards only `gothwad_*`
+cookies. Renaming those in Mail alone gives 403s to the Android app, silent sign-outs and broken
+per-tab isolation — which is what #17 did (`bansify-mail`, `X-Bansify-Authuser`, `bansify_*`
+cookies, `com.bansify.mail`, and the wrong `bansifytech.com`). This branch restores them.
+
+**What changed**
+
+- Display strings in `src/` (`App.tsx`, `Header`, `MobileDrawer`, `EmailList`, `SettingsModal`,
+  `PWAInstallButton`, `AccountSheetFallback`, `ecosystemName: 'Bansify'`), plus `index.html`,
+  `metadata.json` and `public/manifest.json`.
+- `public/oauth/callback/index.html`: prose and the `intent://` host only; the
+  `com.gothwad.mail:/oauth/callback` scheme and `assetlinks.json` are untouched.
+- `worker/src/config.ts` defaults and `worker/wrangler.toml` `[vars]` → `bansify.com`;
+  `/api/health` reports `service: "bansify-mail"` (Mail's own name).
+- No hardcoded Accounts host in browser code: `mailApi.reauthUrl()` takes the session's
+  `accountsWebOrigin`, and the switcher shows the error instead of redirecting to a guess.
+- The widget global is read under both names, new first
+  (`WIDGET_GLOBAL_KEYS = ['BansifyAccountMenu', 'GothwadAccountMenu']`).
+- Theme preference is `bansify_mail_theme`, still reading `gothwad_mail_theme` once so nobody
+  loses their choice (safe, unlike renaming the session cookies).
+- Docs, `.env.example`, tests and the dev stub follow `bansify.com`.
+
+**Verification:** `check:sizes` (105 files, none over 500), `lint`, `npm test` 224 pass / 0 fail,
+`build`, `wrangler deploy --dry-run`. New test: legacy global read, new one preferred.
+
 ## 2026-11-12 — Native app backend: OAuth enforcement, search, batch actions, App Links
 
-**Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` from `BansifyTech/accounts` and
-implement every requirement in `BansifyTech/mail` end-to-end, then run all verification.
+**Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` from `Bansify/accounts` and
+implement every requirement in `Bansify/mail` end-to-end, then run all verification.
 
 **Audit before coding (the brief was checked, not trusted)**
 
 | Claim in the brief | What the live code says |
 | --- | --- |
-| `/api/oauth/userinfo` returns `client_id`, `aud`, `scopes`/`scope`, `given_name`, `family_name` | Confirmed in `BansifyTech/accounts` `cloudflare-worker/src/routes/oauth.ts` |
-| `bansify-mail` / `com.bansify.mail` / those four scopes are registered | Confirmed in `migrations/0014_first_party_native.sql` |
+| `/api/oauth/userinfo` returns `client_id`, `aud`, `scopes`/`scope`, `given_name`, `family_name` | Confirmed in `Bansify/accounts` `cloudflare-worker/src/routes/oauth.ts` |
+| `gothwad-mail` / `com.gothwad.mail` / those four scopes are registered | Confirmed in `migrations/0014_first_party_native.sql` |
 | Mail must enforce audience + `mail` scope | Correct: `resolveBearer` previously accepted **any** valid Accounts token, including one minted for Store or Tube — a real cross-app hole |
-| `BansifyTech/mailapp` already calls these routes | Not yet: the app is still local-only (seed data, no HTTP client). The routes are therefore built to the documented contract and covered by Worker tests, and that is stated honestly rather than claimed as an end-to-end device test |
+| `Bansify/mailapp` already calls these routes | Not yet: the app is still local-only (seed data, no HTTP client). The routes are therefore built to the documented contract and covered by Worker tests, and that is stated honestly rather than claimed as an end-to-end device test |
 | `/oauth/callback` works as a static file | Only with help: the SPA rewrite and the service worker's navigation fallback would both swallow it, so both were changed |
 
 **What changed**
 
-- `worker/src/session.ts`: bearer tokens must be minted for `bansify-mail` (`client_id` or
+- `worker/src/session.ts`: bearer tokens must be minted for `gothwad-mail` (`client_id` or
   `aud`) **and** carry the `mail` scope, otherwise **403 `insufficient_scope`** (never a 401, so
   a native client does not discard a valid token). 401/403 from Accounts, 503s, HTML, redirects
   and timeouts keep their existing meanings. `given_name`/`family_name` are used when present
@@ -36,9 +77,9 @@ implement every requirement in `BansifyTech/mail` end-to-end, then run all verif
 - `worker/src/index.ts`: `POST /api/mail/messages/batch` (registered **before** the `/:id`
   matcher) and `DELETE /api/mail/trash`, both behind `requireSession` + `assertSafeWrite`.
 - `public/oauth/callback/index.html` (new): static bridge that forwards the untouched query to
-  `com.bansify.mail:/oauth/callback`, with an `intent://` hop on Android and a visible fallback.
+  `com.gothwad.mail:/oauth/callback`, with an `intent://` hop on Android and a visible fallback.
   It never exchanges the code or stores anything.
-- `public/.well-known/assetlinks.json` (new): App Links verification for `com.bansify.mail`.
+- `public/.well-known/assetlinks.json` (new): App Links verification for `com.gothwad.mail`.
 - `public/_redirects`: both paths pinned ahead of the SPA catch-all. `vite.config.ts`: `/oauth/`
   added to `navigateFallbackDenylist` so an installed PWA cannot serve the app shell instead.
 
@@ -163,7 +204,7 @@ touched (that repository is read-only from here).
 
 ## 2026-10-22 — The account menu becomes the shared Accounts widget (audited, not copied)
 
-**Owner request:** read `docs/MAIL_UNIVERSAL_ACCOUNT_MENU_PROMPT.md` from `BansifyTech/accounts`,
+**Owner request:** read `docs/MAIL_UNIVERSAL_ACCOUNT_MENU_PROMPT.md` from `Bansify/accounts`,
 **audit both live repos first instead of trusting the brief**, build what is genuinely best,
 keep every file at or below 500 lines, keep tests and the build green, and keep the docs honest.
 
@@ -171,7 +212,7 @@ keep every file at or below 500 lines, keep tests and the build green, and keep 
 
 | Brief says | Live code | Decision |
 | --- | --- | --- |
-| Load `${accountsWebOrigin}/widget/account-menu.js`, call `window.BansifyAccountMenu.open(state, opts)` | Exists in `accounts@main`, exports exactly that (`open/update/close/isOpen`), served with `Access-Control-Allow-Origin: *` | Implemented as described |
+| Load `${accountsWebOrigin}/widget/account-menu.js`, call `window.GothwadAccountMenu.open(state, opts)` | Exists in `accounts@main`, exports exactly that (`open/update/close/isOpen`), served with `Access-Control-Allow-Origin: *` | Implemented as described |
 | Replace Mail's `AccountSheet.tsx` | Mail's sheet was 329 lines of duplicated Google UI | Replaced with a thin host; the rows now live in Accounts |
 | `accountHref`, `badges`, `theme`, `nextUrl`, `manageAccountHref`, `onSwitchAccount/SignOutAccount/SignOutAll` | All read by the live template | Passed, with Mail's own handlers doing the work |
 | "`onSignOutAll`" | Mail had no such route | Added `POST /api/mail/accounts/signout-all` → Accounts `/auth/signout` |
@@ -216,7 +257,7 @@ Also make the file-size rule actually enforced.
   `/?u=n`, `/?login=1&authuser=n`, `/?folder=`) are rewritten once with `replaceState`
   (`src/services/authuser.ts`). One-shot params (`compose=1`, `__mail_auth_return=1`) survive the
   rewrite; the folder lives only in the hash, so folder nav never touches the account.
-- **One account per tab.** Every API call sends `X-Bansify-Authuser: <n>`; the Worker validates
+- **One account per tab.** Every API call sends `X-Gothwad-Authuser: <n>`; the Worker validates
   it and forwards it to Accounts as the tab selector (`worker/src/authuser.ts`). Two tabs, one
   cookie jar, two mailboxes — verified by `worker/test/multitab.test.ts` (parallel reads, send
   From, cross-account 404).
@@ -315,7 +356,7 @@ tap.
   row, spinner on the row being switched, per-row sign-out (confirm only for the last account),
   “Add another account”. Single-account fallback card when Accounts has not shipped yet.
 - `Header`: `+n` bubble on the avatar when more accounts exist, `Shift+A` opens the sheet.
-- `tools/dev-server.mjs`: two-account Accounts stub (alice/bob) driven by a `bansify_active`
+- `tools/dev-server.mjs`: two-account Accounts stub (alice/bob) driven by a `gothwad_active`
   cookie, so the preview and the UI test exercise the real switch path.
 
 **Verified**
@@ -323,7 +364,7 @@ tap.
 - `npm run lint` clean. `npm test` → **108 pass** (config 10, auth 5, worker **72**, d1 15,
   ui **6** — the new one opens the switcher, taps bob, and asserts the app is fully bob after).
 - Manual: `GET /api/mail/accounts` → alice+bob with unread; `POST switch {id:"b"}` → 200,
-  `set-cookie: bansify_active=b`; `GET /api/session` with that cookie → `bob@bansifytech.com`.
+  `set-cookie: gothwad_active=b`; `GET /api/session` with that cookie → `bob@bansify.com`.
 - `npm run build` → main 302.40 kB (89.84 kB gzip); still one lazy chunk per modal.
 
 **Pending:** live check with the two real accounts once the Accounts PR lands.
@@ -334,7 +375,7 @@ tap.
 
 **Owner request:** a Google-style account section — every signed-in Bansify account in one
 place, avatar plus unread count, a tap switching to that mailbox in about a second. Today Mail
-shows a single address even though `accounts.bansifytech.com` holds two sign-ins.
+shows a single address even though `accounts.bansify.com` holds two sign-ins.
 
 **Finding:** this cannot be fixed inside Mail alone. `worker/src/session.ts` asks Accounts for
 **one** identity per request, and Accounts keeps a single session per browser. Forcing Mail to
@@ -344,7 +385,7 @@ allowed. No data migration is needed either: every row is already scoped by `use
 **Deliverables (docs only this session):**
 
 - `docs/ACCOUNTS_AGENT_PROMPT.md` — self-contained prompt for the Accounts agent: per-account
-  session cookies (`bansify_sess_a..f`), HMAC-signed `bansify_accounts` list, `bansify_active`,
+  session cookies (`gothwad_sess_a..f`), HMAC-signed `gothwad_accounts` list, `gothwad_active`,
   and four endpoints (`GET /api/auth/accounts`, `POST /api/auth/switch`,
   `POST /api/auth/accounts/:id/signout`, `GET /signin?choose=1&add=1`). Includes the cookie
   constraints Mail's proxy depends on, 8 required tests, and legacy single-account fallback so

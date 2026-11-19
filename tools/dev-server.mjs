@@ -34,8 +34,8 @@ const db = createLocalD1(process.env.DEV_D1_FILE || ':memory:');
 
 const env = {
   DB: db,
-  APP_DOMAIN: process.env.APP_DOMAIN || 'gothwadtech.com',
-  AUTH_HUB_URL: process.env.AUTH_HUB_URL || 'https://api.gothwadtech.com',
+  APP_DOMAIN: process.env.APP_DOMAIN || 'bansify.com',
+  AUTH_HUB_URL: process.env.AUTH_HUB_URL || 'https://api.bansify.com',
   // Browser-facing Accounts host. Locally that is this server: it serves the
   // widget stub at /widget/account-menu.js and the sign-in stub pages, so the
   // dev preview follows exactly the same code path as production.
@@ -203,9 +203,9 @@ async function seedMailbox(mailDb, username) {
   const day = 24 * 60 * 60 * 1000;
   const welcome = [
     {
-      subject: 'Welcome to Gothwad Mail (local preview)',
-      fromEmail: 'team@gothwadtech.com',
-      fromName: 'Gothwad Team',
+      subject: 'Welcome to Bansify Mail (local preview)',
+      fromEmail: 'team@bansify.com',
+      fromName: 'Bansify Team',
       text: 'Namaste! Yeh ek local preview hai. D1 SQLite asli hai, data sirf aapke browser session ke liye hai.\nSettings me jaakar retention 500 / 1500 / Store All test karein.',
       html: '<h2>Namaste! 🙏</h2><p>Yeh <b>local preview</b> hai. Mail bodies gzip hokar D1 (SQLite) me store hoti hain.</p>',
       isStarred: true,
@@ -265,7 +265,7 @@ async function seedMailbox(mailDb, username) {
     fromEmail: `${username}@${env.APP_DOMAIN}`,
     fromName: 'Pawan',
     to: ['hello@example.com'],
-    subject: 'Testing Gothwad Mail',
+    subject: 'Testing Bansify Mail',
     text: 'Hi! Yeh mail local preview se bheja gaya hai (Resend fake).',
     html: '<p>Hi! Yeh mail local preview se bheja gaya hai.</p>',
     isRead: true,
@@ -291,7 +291,7 @@ async function seedAccountMarkers(mailDb) {
     await insertMessage(mailDb, {
       username,
       folder: 'inbox',
-      fromEmail: 'notes@gothwadtech.com',
+      fromEmail: 'notes@bansify.com',
       fromName: 'Account Marker',
       to: [`${username}@${env.APP_DOMAIN}`],
       subject,
