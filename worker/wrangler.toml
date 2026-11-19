@@ -23,8 +23,8 @@
 # See which secret NAMES the deployed Worker has (names only, never values):
 #   npm run worker:secrets:list
 #
-# Route (production): mail.bansifytech.com/api/*  -> this Worker
-# Email Routing (catch-all *@bansifytech.com)     -> this Worker's email() handler
+# Route (production): mail.bansify.com/api/*  -> this Worker
+# Email Routing (catch-all *@bansify.com)     -> this Worker's email() handler
 # See docs/SETUP.md for the dashboard steps.
 # =============================================================================
 
@@ -65,18 +65,18 @@ database_name = "mail"
 database_id = "87854cea-7feb-46f3-ab99-2a2137f31105"
 
 [vars]
-APP_DOMAIN = "bansifytech.com"
+APP_DOMAIN = "bansify.com"
 # AUTH_HUB_URL = base for every SERVER-side Accounts call (/api/auth/me,
 # /api/oauth/userinfo, /api/internal/usernames/:username). It must be a host
 # that reaches the Accounts Worker, so it is Accounts' Custom Domain. Cloudflare
 # does not run a same-zone Worker behind a Pages host for a server-to-server
-# call: accounts.bansifytech.com answers HTML there and Mail reports 503
+# call: accounts.bansify.com answers HTML there and Mail reports 503
 # accounts_unexpected_response.
-AUTH_HUB_URL = "https://api.bansifytech.com"
+AUTH_HUB_URL = "https://api.bansify.com"
 # AUTH_SIGNIN_URL = browser-facing Accounts links only (sign-in redirect,
 # accountUrl). Optional; falls back to AUTH_HUB_URL when unset.
-AUTH_SIGNIN_URL = "https://accounts.bansifytech.com"
-MAIL_URL = "https://mail.bansifytech.com"
+AUTH_SIGNIN_URL = "https://accounts.bansify.com"
+MAIL_URL = "https://mail.bansify.com"
 ENVIRONMENT = "production"
 # Extra allowed origins, comma-separated (e.g. a Pages preview URL). Empty = none.
 ALLOWED_ORIGINS = ""

@@ -60,7 +60,7 @@ export const MobileDrawer: React.FC = () => {
               </svg>
             </div>
             <span className="text-base font-bold text-neutral-900 dark:text-white">
-              bansify
+              Bansify<span className="text-[#0494f4] font-semibold ml-1">Mail</span>
             </span>
           </div>
           <button

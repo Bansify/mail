@@ -28,7 +28,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0494f4] hover:bg-[#0382d6] text-white text-xs font-bold shadow-md shadow-[#0494f4]/20 transition-all ${className}`}
         >
           <Download className="w-4 h-4 shrink-0" />
-          <span>Install Bansify Email</span>
+          <span>Install Bansify Mail</span>
         </button>
       );
     }

@@ -87,7 +87,7 @@ export function identityPayload(request: Request, config: Config, session: Sessi
       // The account widget shows the real photo when Accounts has one.
       avatarUrl: session.avatarUrl,
     },
-    // The account this TAB is showing (from /u/<n>/ or X-Bansify-Authuser).
+    // The account this TAB is showing (from /u/<n>/ or X-Gothwad-Authuser).
     authuser: session.authuser,
     activeId: session.activeId,
     accounts: session.accounts,

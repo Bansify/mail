@@ -11,7 +11,7 @@
  * the same callbacks. Visual polish belongs to Accounts, not here.
  */
 
-const HOST_TAG = 'data-gothwad-account-menu-stub';
+const HOST_TAG = 'data-bansify-account-menu-stub';
 
 const CSS = `
 :host { all: initial; }
@@ -157,7 +157,7 @@ class Controller {
     this.root.innerHTML = `<style>${CSS}</style>
       <div class="layer" data-theme="${theme}">
         <div class="backdrop" data-close="1"></div>
-        <div class="sheet" role="dialog" aria-modal="true" aria-label="Gothwad Account menu"
+        <div class="sheet" role="dialog" aria-modal="true" aria-label="Bansify Account menu"
              style="--top:${top}px;--right:${right}px">
           <div class="hero">
             ${avatarMarkup(user || {})}
@@ -177,9 +177,9 @@ class Controller {
           ${managing && others.length > 0 ? `<button class="row danger" data-signout-all="1" type="button"><span class="meta"><span>Sign out of all accounts</span></span></button>` : ''}
           ${extraRows}
           <a class="row" href="${esc(opts.manageAccountHref || '#')}" data-manage="1">
-            <span class="meta"><span>Manage your Gothwad Account</span></span>
+            <span class="meta"><span>Manage your Bansify Account</span></span>
           </a>
-          <div class="footer">Gothwad Accounts &bull; local widget stub</div>
+          <div class="footer">Bansify Accounts &bull; local widget stub</div>
         </div>
       </div>`;
     this.bind();

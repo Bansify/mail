@@ -2,7 +2,7 @@
 // Browser client for the Mail Worker API.
 //
 // Why relative /api: in production the Worker is routed on
-// mail.bansifytech.com/api/*. In dev, Vite proxies /api to `wrangler dev`.
+// mail.bansify.com/api/*. In dev, Vite proxies /api to `wrangler dev`.
 // Either way the browser stays on one origin, so the session cookie is sent
 // and no CORS setup is needed.
 //
@@ -259,11 +259,17 @@ export const mailApi = {
   signOutAll: () =>
     request<{ ok: true; signedOutAll: true }>('/mail/accounts/signout-all', { method: 'POST', body: {} }),
 
-  /** Accounts' re-auth link for one slot (used when a switch returns 409). */
-  reauthUrl: (authuser: number, username?: string) => {
+  /**
+   * Accounts' re-auth link for one slot (used when a switch returns 409).
+   *
+   * `accountsWebOrigin` comes from the session payload, so the browser never
+   * guesses an Accounts host. If it is missing, the caller uses the Worker's
+   * own `reauthUrl`, which is built from the deployment config.
+   */
+  reauthUrl: (accountsWebOrigin: string, authuser: number, username?: string) => {
     const qs = new URLSearchParams({ login: '1', authuser: String(authuser), next: `/u/${authuser}/` });
     if (username) qs.set('username', username);
-    return `https://accounts.bansifytech.com/signin?${qs.toString()}`;
+    return `${accountsWebOrigin.replace(/\/+$/, '')}/signin?${qs.toString()}`;
   },
 
   send: (payload: { to: string[]; cc: string[]; bcc: string[]; subject: string; body: string; draftId?: string }) =>

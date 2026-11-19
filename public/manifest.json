@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Bansify Email",
-  "short_name": "Bansify Email",
+  "name": "Bansify Mail",
+  "short_name": "BansifyMail",
   "description": "Fast, modern desktop and mobile webmail for your Bansify address, signed in with Bansify Accounts.",
   "start_url": "/",
   "scope": "/",

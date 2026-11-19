@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import worker from '../src/index.ts';
 import { h, authed, req, seedMessage, makeEnv, type Seen, type Stub } from './helpers.ts';
 
-/** Accounts stub that answers /auth/me for the cookie bansify_at=good. */
+/** Accounts stub that answers /auth/me for the cookie gothwad_at=good. */
 function accountsMe(body: unknown = { authenticated: true, user: { username: 'alice', first_name: 'Alice' } }): Stub {
   return (s: Seen) => {
     if (s.url.origin !== 'https://accounts.test') return new Response('x', { status: 599 });
@@ -99,7 +99,7 @@ test('the metadata endpoint returns badges and quota for this tab account', asyn
   await seedMessage({ username: 'alice' });
   await seedMessage({ username: 'bob' });
 
-  const res = await worker.fetch(authed('/api/session/meta', { headers: { 'X-Bansify-Authuser': '1' } }), h.env);
+  const res = await worker.fetch(authed('/api/session/meta', { headers: { 'X-Gothwad-Authuser': '1' } }), h.env);
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.meta, true);
@@ -110,14 +110,14 @@ test('the metadata endpoint returns badges and quota for this tab account', asyn
 
   const upstream = h.seen.filter((s) => s.url.pathname === '/api/auth/me');
   assert.equal(upstream.length, 1, 'one verification for one request');
-  assert.equal(upstream[0].headers.get('x-bansify-authuser'), '1', 'this tab selector is forwarded');
+  assert.equal(upstream[0].headers.get('x-gothwad-authuser'), '1', 'this tab selector is forwarded');
 });
 
 test('anonymous: both endpoints answer 401 with the sign-in link', async () => {
   h.stub = () => Response.json({ authenticated: false }, { status: 401 });
 
   for (const path of ['/api/session?meta=0', '/api/session', '/api/session/meta']) {
-    const res = await worker.fetch(req(path, { cookie: 'bansify_at=stale' }), h.env);
+    const res = await worker.fetch(req(path, { cookie: 'gothwad_at=stale' }), h.env);
     assert.equal(res.status, 401, `${path} must be the only sign-out answer`);
     const body = await res.json();
     assert.equal(body.error, 'unauthenticated');
@@ -166,8 +166,8 @@ test('a network error from Accounts is a 503 too', async () => {
 
 test('rotated session cookies are forwarded separately from both calls', async () => {
   const cookies = [
-    'bansify_at=NEW_A; Domain=.bansifytech.com; Path=/; HttpOnly',
-    'bansify_rt=NEW_R; Domain=.bansifytech.com; Path=/; HttpOnly',
+    'gothwad_at=NEW_A; Domain=.bansify.com; Path=/; HttpOnly',
+    'gothwad_rt=NEW_R; Domain=.bansify.com; Path=/; HttpOnly',
   ];
   h.stub = (s: Seen) => {
     if (s.url.pathname !== '/api/auth/me') return new Response('x', { status: 599 });
@@ -184,15 +184,15 @@ test('rotated session cookies are forwarded separately from both calls', async (
     assert.equal(res.status, 200, path);
     const forwarded = res.headers.getSetCookie();
     assert.equal(forwarded.length, 2, `${path}: one Set-Cookie header per rotated cookie`);
-    assert.match(forwarded[0], /^bansify_at=NEW_A/);
-    assert.match(forwarded[1], /^bansify_rt=NEW_R/);
+    assert.match(forwarded[0], /^gothwad_at=NEW_A/);
+    assert.match(forwarded[1], /^gothwad_rt=NEW_R/);
   }
 });
 
 test('the tab selector is forwarded and never leaks into the identity of another tab', async () => {
   h.stub = (s: Seen) => {
     if (s.url.pathname !== '/api/auth/me') return new Response('x', { status: 599 });
-    const selector = s.headers.get('x-bansify-authuser');
+    const selector = s.headers.get('x-gothwad-authuser');
     const username = selector === '1' ? 'bob' : 'alice';
     return Response.json({
       authenticated: true,
@@ -206,12 +206,12 @@ test('the tab selector is forwarded and never leaks into the identity of another
   };
 
   const [tabZero, tabOne] = await Promise.all([
-    worker.fetch(authed('/api/session?meta=0', { headers: { 'X-Bansify-Authuser': '0' } }), h.env),
-    worker.fetch(authed('/api/session?meta=0', { headers: { 'X-Bansify-Authuser': '1' } }), h.env),
+    worker.fetch(authed('/api/session?meta=0', { headers: { 'X-Gothwad-Authuser': '0' } }), h.env),
+    worker.fetch(authed('/api/session?meta=0', { headers: { 'X-Gothwad-Authuser': '1' } }), h.env),
   ]);
 
   assert.equal((await tabZero.json()).user.username, 'alice');
   assert.equal((await tabOne.json()).user.username, 'bob');
-  const selectors = h.seen.map((s) => s.headers.get('x-bansify-authuser'));
+  const selectors = h.seen.map((s) => s.headers.get('x-gothwad-authuser'));
   assert.deepEqual(selectors, ['0', '1'], 'each request carried its own selector');
 });

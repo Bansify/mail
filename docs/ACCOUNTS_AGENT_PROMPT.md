@@ -1,4 +1,4 @@
-# Prompt for the Gothwad Accounts agent — multi-account sessions
+# Prompt for the Bansify Accounts agent — multi-account sessions
 
 Copy everything below the line into the Accounts agent's session. It is written to be
 self-contained: the Accounts agent only needs its own repo plus this text.
@@ -9,8 +9,8 @@ Related plan on the Mail side: [`MULTI_ACCOUNT_PLAN.md`](./MULTI_ACCOUNT_PLAN.md
 
 ## Task
 
-Add **Google-style multiple signed-in accounts** to Gothwad Accounts, so that every Gothwad
-app (starting with Mail at `https://mail.gothwadtech.com`) can show an account switcher and
+Add **Google-style multiple signed-in accounts** to Bansify Accounts, so that every Bansify
+app (starting with Mail at `https://mail.bansify.com`) can show an account switcher and
 change the active account **in about a second, without signing out and without a password
 re-entry**.
 
@@ -29,18 +29,18 @@ shows a single mailbox. The fix belongs here, in Accounts, not in each app.
    free tier. Prefer storing the list in cookies and adding **no** table at all.
 4. **Cookie-only identity.** No token in `localStorage`/`sessionStorage` — one XSS would leak
    every signed-in account at once.
-5. Do not touch `GothwadTech/mail` or other app repos.
+5. Do not touch `Bansify/mail` or other app repos.
 6. Update `docs/MAIL_INTERNAL.md` (the naming table) and your own `TASK.md` in the same PR.
 7. Everything cross-origin must be **server-side proxied** or explicitly CORS-allowed, and the
    design must survive `SameSite` cookie rules. Details below.
 
 ## Identity model (recommended)
 
-All Gothwad apps live on `*.gothwadtech.com`, which is the same site, so `SameSite=Lax`
+All Bansify apps live on `*.bansify.com`, which is the same site, so `SameSite=Lax`
 cookies work everywhere. Keep it that way; do not introduce a cross-site flow.
 
 ```
-gothwad_sess_<slot>     one real session per account   slot = a,b,c…  (Path=/; HttpOnly; Secure; SameSite=Lax; Domain=.gothwadtech.com)
+gothwad_sess_<slot>     one real session per account   slot = a,b,c…  (Path=/; HttpOnly; Secure; SameSite=Lax; Domain=.bansify.com)
 gothwad_accounts        signed list of slots + display data        (HttpOnly; Secure; SameSite=Lax; read by the server, not by JS)
 gothwad_active          which slot is active right now            (HttpOnly; Secure; SameSite=Lax)
 gothwad_*               existing cookies keep working as the "slot a"/legacy session
@@ -73,9 +73,9 @@ re-issue `gothwad_accounts` without them (a stale slot must never show in the UI
   "activeId": "a",
   "accounts": [
     { "id": "a", "username": "pawan", "firstName": "Pawan", "lastName": "Sharma",
-      "email": "pawan@gothwadtech.com", "lastUsedAt": "2026-10-20T11:02:00.000Z" },
+      "email": "pawan@bansify.com", "lastUsedAt": "2026-10-20T11:02:00.000Z" },
     { "id": "b", "username": "work", "firstName": "", "lastName": "",
-      "email": "work@gothwadtech.com", "lastUsedAt": "2026-10-19T09:10:00.000Z" }
+      "email": "work@bansify.com", "lastUsedAt": "2026-10-19T09:10:00.000Z" }
   ]
 }
 ```
@@ -93,7 +93,7 @@ re-issue `gothwad_accounts` without them (a stale slot must never show in the UI
   `/auth/me` rotates today, and returns the same body as `GET /api/auth/accounts`.
 * Unknown / revoked slot → `409 { "error": "account_not_signed_in" }`. The UI then removes it
   from the list and offers "sign in again" for that account.
-* Must be `POST` and must reject a request with no `Origin`/`Referer` from a Gothwad host
+* Must be `POST` and must reject a request with no `Origin`/`Referer` from a Bansify host
   (CSRF). Keep the existing CSRF approach; do not weaken it.
 
 ### 3. `POST /api/auth/accounts/:id/signout`
@@ -127,7 +127,7 @@ Mail proxies these calls server-to-server and forwards `Set-Cookie` to the brows
    (Mail re-sends them with `getSetCookie()`). No combined header.
 2. Cookie names must match `^gothwad_[a-z_]+=` (Mail only forwards that prefix) and cookie
    names for slots must match `^gothwad_sess_[a-z]$` — no dots, no uppercase.
-3. No `__Host-` / `__Secure-` prefixes: Mail forwards the cookies to `.gothwadtech.com`, and
+3. No `__Host-` / `__Secure-` prefixes: Mail forwards the cookies to `.bansify.com`, and
    those prefixes forbid a `Domain` attribute.
 4. Bodies stay small and JSON; no HTML error pages on `/api/*`.
 5. Idempotent switch: calling `POST /api/auth/switch` twice with the same id is a no-op success.
@@ -144,7 +144,7 @@ Cover, at minimum:
 6. `gothwad_accounts` tampered with (flipped byte) → treated as absent, legacy fallback works,
    no crash and no 500.
 7. Legacy browser (only the old cookie) → unchanged behaviour on all endpoints.
-8. CSRF: `POST /api/auth/switch` without a Gothwad Origin is rejected.
+8. CSRF: `POST /api/auth/switch` without a Bansify Origin is rejected.
 
 ## Delivering
 
@@ -164,7 +164,7 @@ side is already specified in `MULTI_ACCOUNT_PLAN.md`.
 ## Addendum — Mail now consumes `web/widget/account-menu.js`
 
 Mail removed its own account sheet and opens the shared widget instead. The integration was
-written against the live file in `GothwadTech/accounts@main`, not against a mock, so these are the
+written against the live file in `Bansify/accounts@main`, not against a mock, so these are the
 points Accounts has to keep stable:
 
 **Contract Mail relies on (do not rename without telling Mail):**

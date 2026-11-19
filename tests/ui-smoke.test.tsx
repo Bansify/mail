@@ -34,7 +34,7 @@ test('signed-in user sees the inbox, can open a message safely, and can open com
   // 1. Auth gate first, then the real list from the Worker.
   assert.match(text(), /Checking your Bansify account/);
   await waitFor(() => text().includes('Invoice for October'), 'inbox row "Invoice for October"');
-  assert.ok(text().includes('alice@bansifytech.com') || text().includes('Inbox'), 'sidebar shows the Inbox');
+  assert.ok(text().includes('alice@bansify.com') || text().includes('Inbox'), 'sidebar shows the Inbox');
   assert.equal(text().includes('Supabase'), false, 'no Supabase UI left');
   assert.equal(text().includes('John Demo'), false, 'no demo names');
 
@@ -118,12 +118,12 @@ test('a 503 session check shows the profile error with Retry and does not redire
   // The Worker answers 503 accounts_user_invalid when Accounts says the user is
   // signed in but sends no usable username. The app must show that with a Retry
   // button instead of sending the browser back to the Accounts chooser.
-  setCookie('bansify_at=no_username');
+  setCookie('gothwad_at=no_username');
   const probe = await fetch('/api/session');
   if (probe.status !== 503) {
     t.skip(
       `the local Accounts stub must answer 200 {authenticated:true,user:{username:""}} for ` +
-        `cookie bansify_at=no_username; the Worker answered ${probe.status}`
+        `cookie gothwad_at=no_username; the Worker answered ${probe.status}`
     );
     resetCookie();
     return;

@@ -96,7 +96,7 @@ test('the 503 upstream detail never carries the Accounts body or a cookie', asyn
         status: 200,
         headers: {
           'content-type': 'text/html; charset=utf-8',
-          'set-cookie': 'bansify_at=SECRET_COOKIE_VALUE; Domain=.bansifytech.com',
+          'set-cookie': 'gothwad_at=SECRET_COOKIE_VALUE; Domain=.bansify.com',
         },
       })
   );
@@ -134,7 +134,7 @@ test('Accounts unreachable -> 503 auth_unavailable', async () => {
 
 test('Accounts outage gives 503, not a fake signed-out state', async () => {
   h.stub = () => new Response('boom', { status: 500 });
-  const res = await worker.fetch(req('/api/session', { cookie: 'bansify_at=good' }), h.env);
+  const res = await worker.fetch(req('/api/session', { cookie: 'gothwad_at=good' }), h.env);
   assert.equal(res.status, 503);
 });
 
@@ -148,7 +148,7 @@ test('failures log one warn line with status, content-type and code (no secrets)
     h.stub = accountsMeStub(
       () => new Response('<html>SECRET_BODY</html>', { status: 200, headers: { 'content-type': 'text/html' } })
     );
-    await handleRequest(req('/api/session', { cookie: 'bansify_at=SECRET_COOKIE_VALUE' }), h.env);
+    await handleRequest(req('/api/session', { cookie: 'gothwad_at=SECRET_COOKIE_VALUE' }), h.env);
   } finally {
     console.warn = originalWarn;
   }
@@ -179,7 +179,7 @@ test('signed-out 401 uses AUTH_SIGNIN_URL while the session check uses AUTH_HUB_
       ? Response.json({ authenticated: false }, { status: 401 })
       : new Response('x', { status: 599 })
   );
-  const res = await handleRequest(req('/api/session', { cookie: 'bansify_at=fresh' }), custom);
+  const res = await handleRequest(req('/api/session', { cookie: 'gothwad_at=fresh' }), custom);
   assert.equal(res.status, 401);
   const body = (await res.json()) as { error: string; signinUrl: string };
   assert.equal(body.signinUrl, 'https://accounts.test/signin?choose=1');
@@ -197,7 +197,7 @@ test('accountUrl uses AUTH_SIGNIN_URL and /api/auth/me still uses AUTH_HUB_URL',
       ? Response.json({ authenticated: true, user: { username: 'alice', first_name: 'Alice' } })
       : new Response('x', { status: 599 })
   );
-  const res = await handleRequest(req('/api/session', { cookie: 'bansify_at=good' }), custom);
+  const res = await handleRequest(req('/api/session', { cookie: 'gothwad_at=good' }), custom);
   assert.equal(res.status, 200);
   const body = (await res.json()) as { accountUrl: string; authuser: number };
   // Google-style per-account profile page; index 0 because no accounts[] came back.
@@ -217,7 +217,7 @@ test('bearer token path uses userinfo on AUTH_HUB_URL and derives the email', as
   const res = await worker.fetch(req('/api/session', { headers: { authorization: MAIL_TOKEN } }), custom);
   assert.equal(res.status, 200);
   const body = await res.json();
-  assert.equal(body.user.email, 'alice@bansifytech.com');
+  assert.equal(body.user.email, 'alice@bansify.com');
   assert.equal(body.user.name, 'Alice Sharma');
   assert.equal(body.user.firstName, 'Alice', 'given_name is used when present');
   assert.equal(body.user.lastName, 'Sharma');
@@ -231,7 +231,7 @@ test('session returns derived email and remaining sends counted from D1', async 
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.user.username, 'alice');
-  assert.equal(body.user.email, 'alice@bansifytech.com');
+  assert.equal(body.user.email, 'alice@bansify.com');
   assert.equal(body.user.name, 'Alice Sharma');
   assert.equal(body.limits.sendRemainingToday, 1, 'limit 2, one sent today');
   assert.equal(body.accountUrl, 'https://accounts.test/u/0/me');
@@ -241,19 +241,19 @@ test('rotated Accounts cookies are forwarded; other cookies are dropped', async 
   h.stub = (s) => {
     if (s.url.host !== 'accounts.test') return new Response('x', { status: 599 });
     const h = new Headers({ 'content-type': 'application/json' });
-    h.append('set-cookie', 'bansify_at=NEW_AT; Domain=.bansifytech.com; Path=/; HttpOnly');
-    h.append('set-cookie', 'bansify_rt=NEW_RT; Domain=.bansifytech.com; Path=/; HttpOnly');
+    h.append('set-cookie', 'gothwad_at=NEW_AT; Domain=.bansify.com; Path=/; HttpOnly');
+    h.append('set-cookie', 'gothwad_rt=NEW_RT; Domain=.bansify.com; Path=/; HttpOnly');
     h.append('set-cookie', 'evil=1; Path=/');
     return new Response(
       JSON.stringify({ authenticated: true, user: { username: 'alice', first_name: 'Alice', last_name: '' } }),
       { status: 200, headers: h }
     );
   };
-  const res = await handleRequest(req('/api/session', { cookie: 'bansify_at=old; bansify_rt=old' }), h.env);
+  const res = await handleRequest(req('/api/session', { cookie: 'gothwad_at=old; gothwad_rt=old' }), h.env);
   assert.equal(res.status, 200);
   const cookies = res.headers.getSetCookie();
-  assert.ok(cookies.some((c) => c.startsWith('bansify_at=NEW_AT')));
-  assert.ok(cookies.some((c) => c.startsWith('bansify_rt=NEW_RT')));
+  assert.ok(cookies.some((c) => c.startsWith('gothwad_at=NEW_AT')));
+  assert.ok(cookies.some((c) => c.startsWith('gothwad_rt=NEW_RT')));
   assert.equal(cookies.some((c) => c.startsWith('evil=')), false);
   assert.equal((await res.text()).includes('NEW_AT'), false, 'token values are not echoed');
 });
@@ -262,7 +262,7 @@ test('dev bypass works only with ENVIRONMENT=development', async () => {
   h.stub = fullStub;
   const res = await worker.fetch(req('/api/session'), makeEnv({ ENVIRONMENT: 'development', DEV_AUTH_USERNAME: 'pawan' }));
   assert.equal(res.status, 200);
-  assert.equal((await res.json()).user.email, 'pawan@bansifytech.com');
+  assert.equal((await res.json()).user.email, 'pawan@bansify.com');
 
   const prod = await worker.fetch(req('/api/session'), makeEnv({ DEV_AUTH_USERNAME: 'pawan' }));
   assert.equal(prod.status, 401, 'the bypass is ignored in production');
@@ -322,14 +322,14 @@ test('development points the widget at the host the browser used; production use
   // Development: the local dev server serves the widget stand-in itself, so the
   // browser must be told the origin it is actually on.
   const dev = await worker.fetch(
-    req('/api/session', { cookie: 'bansify_at=good', headers: { host: '3000-preview.test' } }),
+    req('/api/session', { cookie: 'gothwad_at=good', headers: { host: '3000-preview.test' } }),
     makeEnv({ ENVIRONMENT: 'development' })
   );
   assert.equal(((await dev.json()) as { accountsWebOrigin: string }).accountsWebOrigin, 'http://3000-preview.test');
 
   // Production: always the configured Accounts web host, whatever Host says.
   const prod = await worker.fetch(
-    req('/api/session', { cookie: 'bansify_at=good', headers: { host: 'evil.test' } }),
+    req('/api/session', { cookie: 'gothwad_at=good', headers: { host: 'evil.test' } }),
     h.env
   );
   assert.equal(((await prod.json()) as { accountsWebOrigin: string }).accountsWebOrigin, 'https://accounts.test');

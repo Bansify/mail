@@ -1,9 +1,9 @@
-# How Gothwad Mail works
+# How Bansify Mail works
 
 ## The pieces
 
 ```
-Browser ──► mail.gothwadtech.com
+Browser ──► mail.bansify.com
              ├─ static web app (Pages)            src/
              └─ /api/*  ──► Mail Worker           worker/src/index.ts
                               ├─► Accounts: who is signed in?   AUTH_HUB_URL/api/auth/me
@@ -28,7 +28,7 @@ Internet mail ──► Email Routing (catch-all) ──► Mail Worker email()
 
 ### The native app (OAuth + App Links)
 
-`GothwadTech/mailapp` (package `com.gothwad.mail`) is a public PKCE client registered in
+`Bansify/mailapp` (package `com.gothwad.mail`) is a public PKCE client registered in
 Accounts as `gothwad-mail` with the scopes `profile`, `email`, `offline_access` and `mail`. It
 calls this API with `Authorization: Bearer <access_token>`; cookie requests never mix with it.
 Sign-in returns to `/oauth/callback`, a static bridge that forwards the untouched query to the
@@ -38,14 +38,14 @@ app's own scheme. Details: [NATIVE_API.md](NATIVE_API.md).
 
 | Var | Used for | Value |
 | --- | --- | --- |
-| `AUTH_HUB_URL` | **Every server-side fetch** Mail makes to Accounts: `/api/auth/me`, `/api/oauth/userinfo`, `/api/internal/usernames/:username` (inbound). | `https://api.gothwadtech.com` — Accounts' Custom Domain. |
-| `AUTH_SIGNIN_URL` | **Browser-facing links only**: `signinUrl` in a 401, and `accountUrl` in `/api/session`. | `https://accounts.gothwadtech.com` — the host people sign in on. |
+| `AUTH_HUB_URL` | **Every server-side fetch** Mail makes to Accounts: `/api/auth/me`, `/api/oauth/userinfo`, `/api/internal/usernames/:username` (inbound). | `https://api.bansify.com` — Accounts' Custom Domain. |
+| `AUTH_SIGNIN_URL` | **Browser-facing links only**: `signinUrl` in a 401, and `accountUrl` in `/api/session`. | `https://accounts.bansify.com` — the host people sign in on. |
 
 Why two: Cloudflare does **not** invoke a same-zone Worker that is attached by a Route for a
-server-to-server call. When Mail called `https://accounts.gothwadtech.com/api/auth/me`, the
+server-to-server call. When Mail called `https://accounts.bansify.com/api/auth/me`, the
 request was served by the Pages SPA and answered `200 text/html`, so Mail had no session to
 read and answered 503 `accounts_unexpected_response`. Server calls therefore use the Accounts
-Custom Domain. Users still sign in on `accounts.gothwadtech.com`.
+Custom Domain. Users still sign in on `accounts.bansify.com`.
 
 `AUTH_SIGNIN_URL` is optional: when it is unset it falls back to `AUTH_HUB_URL`. Both vars are
 public config (`wrangler.toml` `[vars]`), not secrets.
@@ -66,10 +66,10 @@ public config (`wrangler.toml` `[vars]`), not secrets.
    cookies. The Worker passes those cookies on to the browser. If it did not, the user would
    be signed out of Accounts everywhere.
 5. Bearer tokens (`Authorization: Bearer ...`) are for the native Android app
-   (`GothwadTech/mailapp`). They are checked with
+   (`Bansify/mailapp`). They are checked with
    `GET {AUTH_HUB_URL}/api/oauth/userinfo`, and the answer must belong to **this** app:
    `client_id` or `aud` must be `gothwad-mail`, and the granted scopes must include `mail`.
-   A token minted for another Gothwad app (Store, Tube) or a token without `mail` is refused
+   A token minted for another Bansify app (Store, Tube) or a token without `mail` is refused
    with **403 `insufficient_scope`** — not a 401, because the token is valid and the client must
    not throw it away. The web app does not use bearer tokens at all.
 6. **A 401 from Mail may only ever mean "Accounts says this browser is signed out".** Any
@@ -122,7 +122,7 @@ URL has already worked: Mail received the marked return URL, but `GET /api/sessi
 could not verify the Accounts session. Mail stops after that return and shows a message
 instead of sending the browser through an endless chooser loop.
 
-Check the status and the `error` code of `https://mail.gothwadtech.com/api/session` in the
+Check the status and the `error` code of `https://mail.bansify.com/api/session` in the
 browser's Network panel (only the status code and the `error` field — never paste a body that
 may contain tokens):
 
@@ -135,7 +135,7 @@ may contain tokens):
   the Accounts Worker, or Accounts is redirecting. Read `upstreamStatus` and
   `upstreamContentType`: `200 text/html` means the request hit the Pages SPA instead of the
   Worker (the classic same-zone Route problem), so `AUTH_HUB_URL` must be
-  `https://api.gothwadtech.com`.
+  `https://api.bansify.com`.
 - **503 `auth_unavailable`** — the Accounts Worker is down or `AUTH_HUB_URL` is wrong.
 
 ## The mailbox model (Cloudflare D1)
@@ -285,9 +285,11 @@ the "401 means signed out" rule stays in one place (`worker/src/accounts.ts`).
 
 ### The menu itself is Accounts' widget, not Mail's UI
 
-Every Gothwad app must show the *same* sheet, the way Gmail, Keep and Play show Google's
+Every Bansify app must show the *same* sheet, the way Gmail, Keep and Play show Google's
 OneGoogle bar. Accounts hosts it once at
-`${accountsWebOrigin}/widget/account-menu.js` (`window.GothwadAccountMenu`), and Mail consumes it:
+`${accountsWebOrigin}/widget/account-menu.js`. It registers a global menu object
+(`window.BansifyAccountMenu`, or the legacy `window.GothwadAccountMenu` that Accounts still
+ships today — the loader accepts both, preferred name first), and Mail consumes it:
 
 * `src/services/accountWidget.ts` — the loader. It imports the module once (dynamic
   `import(/* @vite-ignore */ url)`, which is CORS-fetched; Accounts serves `/widget/*` with
@@ -355,7 +357,7 @@ the `gothwad_active` cookie, and serves `tools/account-menu-widget.stub.js` at
 `/widget/account-menu.js` with the same `open/update/close/isOpen` API as the real widget. So
 `npm run preview:api` + `npm run dev` shows the widget path end to end, and `npm run test:ui`
 drives the same widget inside jsdom (the test installs the stand-in as
-`window.GothwadAccountMenu`, which is what the loader checks first).
+`window.GothwadAccountMenu`, the legacy name, which proves the fallback lookup works).
 
 ## Frontend
 
@@ -388,7 +390,7 @@ drives the same widget inside jsdom (the test installs the stand-in as
 - `public/manifest.json` has `display_override`, `orientation`, `categories` and three
   shortcuts (`/?compose=1`, `/?folder=inbox`, `/?folder=starred`); the app reads those params
   once and then clears them from the URL.
-- The tab title shows the unread inbox count: `(3) Gothwad Mail`.
+- The tab title shows the unread inbox count: `(3) Bansify Mail`.
 - Reduced-motion and iOS 16px input rules live in `src/index.css`.
 
 ### Settings
@@ -432,7 +434,7 @@ The `email()` handler runs for each message that Email Routing sends to the Work
 1. Reject if the recipient is not on `APP_DOMAIN` (**550**). Case-insensitive.
 2. Reject if the raw message is over `MAX_INBOUND_BYTES` (default 10 MB) (**552**), before any
    parsing or database call.
-3. **Accounts-only:** the name must be a real Gothwad user. After validating its shape, the
+3. **Accounts-only:** the name must be a real Bansify user. After validating its shape, the
    Worker sends the lowercased local part to
    `GET {AUTH_HUB_URL}/api/internal/usernames/:username` with
    `Authorization: Bearer <ACCOUNTS_INTERNAL_TOKEN>` (same value as Accounts'

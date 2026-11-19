@@ -1,7 +1,7 @@
 // =============================================================================
 // Bansify Mail Worker: one Worker with two entry points.
 //
-//   fetch()  -> REST API under /api/* (route: mail.bansifytech.com/api/*)
+//   fetch()  -> REST API under /api/* (route: mail.bansify.com/api/*)
 //   email()  -> inbound mail from Cloudflare Email Routing (catch-all)
 //
 // Storage is Cloudflare D1 (`env.DB`, database `mail`). Zero Supabase.

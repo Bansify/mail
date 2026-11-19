@@ -1,6 +1,6 @@
 # Startup: what the app waits for, and what it does not
 
-The app used to hide everything behind one full-screen screen ("Checking your Gothwad
+The app used to hide everything behind one full-screen screen ("Checking your Bansify
 account…") until a single `/api/session` request had done all of this in order:
 
 1. one Accounts verification (`GET {AUTH_HUB_URL}/api/auth/me`, which can also rotate cookies),

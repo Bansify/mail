@@ -42,7 +42,7 @@ test('PATCH is refused from an unknown origin (CSRF guard)', async () => {
   const res = await worker.fetch(
     req(`/api/mail/messages/${id}`, {
       method: 'PATCH',
-      cookie: 'bansify_at=good',
+      cookie: 'gothwad_at=good',
       origin: 'https://evil.example',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ isStarred: true }),
@@ -63,7 +63,7 @@ test('PATCH needs JSON content-type even from our own origin', async () => {
   const res = await worker.fetch(
     req(`/api/mail/messages/${id}`, {
       method: 'PATCH',
-      cookie: 'bansify_at=good',
+      cookie: 'gothwad_at=good',
       origin: MAIL_ORIGIN,
       headers: { 'content-type': 'text/plain' },
       body: JSON.stringify({ isStarred: true }),

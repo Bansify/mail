@@ -1,5 +1,5 @@
 -- =============================================================================
--- GOTHWAD MAIL — Cloudflare D1 schema (`mail` database, binding "DB")
+-- BANSIFY MAIL — Cloudflare D1 schema (`mail` database, binding "DB")
 --
 -- DO I NEED TO RUN THIS?
 --   No. The Worker bootstraps the same statements on its first request
@@ -15,7 +15,7 @@
 --
 -- WHO WRITES HERE
 --   * Worker REST API -> every query is scoped by to_username from the
---     verified Gothwad Accounts session.
+--     verified Bansify Accounts session.
 --   * Inbound Email Routing handler -> checks the username with Accounts, then
 --     inserts into the recipient's mailbox.
 --   * Browser -> NEVER touches D1 directly. It calls the Worker API.

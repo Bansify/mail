@@ -2,7 +2,7 @@
 //
 // Two browser tabs share ONE cookie jar. Each tab still has to read and write
 // its own mailbox, because every request carries that tab's
-// X-Bansify-Authuser and the Worker forwards it to Accounts. These tests run the
+// X-Gothwad-Authuser and the Worker forwards it to Accounts. These tests run the
 // two tabs concurrently and prove nothing leaks between them.
 
 import { test } from 'node:test';
@@ -24,7 +24,7 @@ function multiAccountStub(): Stub {
       return new Response('x', { status: 599 });
     }
     if (s.url.pathname === '/api/auth/me') {
-      const selector = (s.headers.get('x-bansify-authuser') || '').toLowerCase();
+      const selector = (s.headers.get('x-gothwad-authuser') || '').toLowerCase();
       const slot =
         SLOTS.find((a) => String(a.authuser) === selector) ??
         SLOTS.find((a) => a.id === selector) ??
@@ -52,8 +52,8 @@ function multiAccountStub(): Stub {
 function tab(tabIndex: number, path: string, init: RequestInit = {}) {
   return req(path, {
     ...init,
-    cookie: 'bansify_at=good',
-    headers: { ...(init.headers as Record<string, string> | undefined), 'X-Bansify-Authuser': String(tabIndex) },
+    cookie: 'gothwad_at=good',
+    headers: { ...(init.headers as Record<string, string> | undefined), 'X-Gothwad-Authuser': String(tabIndex) },
   });
 }
 
@@ -78,7 +78,7 @@ test('/api/session is a single-call boot: user + authuser + accounts + unread', 
   // Exactly one upstream call: no boot waterfall.
   const upstream = h.seen.filter((s) => s.url.host === 'accounts.test');
   assert.equal(upstream.length, 1);
-  assert.equal(upstream[0].headers.get('x-bansify-authuser'), '1');
+  assert.equal(upstream[0].headers.get('x-gothwad-authuser'), '1');
 });
 
 test('two tabs read their own inbox concurrently without leakage', async () => {
@@ -131,11 +131,11 @@ test('sending from tab B uses bob as the From, and stores it under bob', async (
     "SELECT to_username, from_email FROM mail_messages WHERE folder = 'sent' ORDER BY received_at DESC LIMIT 1"
   );
   assert.equal(row?.to_username, 'bob');
-  assert.equal(row?.from_email, 'bob@bansifytech.com');
+  assert.equal(row?.from_email, 'bob@bansify.com');
 
   // The send went out under the account the tab selected, not the other one.
   const resend = h.seen.find((s) => s.url.host === 'api.resend.com');
-  assert.match(String(resend?.body), /bob@bansifytech\.com/);
+  assert.match(String(resend?.body), /bob@bansify\.com/);
 });
 
 test('the ?authuser= query works for a first hard navigation (no header yet)', async () => {
@@ -145,17 +145,17 @@ test('the ?authuser= query works for a first hard navigation (no header yet)', a
   assert.equal(body.user.username, 'bob');
   assert.equal(body.authuser, 1);
   const upstream = h.seen.find((s) => s.url.host === 'accounts.test');
-  assert.equal(upstream?.headers.get('x-bansify-authuser'), '1');
+  assert.equal(upstream?.headers.get('x-gothwad-authuser'), '1');
 });
 
 test('an out-of-range selector is ignored instead of being forwarded', async () => {
   h.stub = multiAccountStub();
   await worker.fetch(
-    req('/api/session', { cookie: 'bansify_at=good', headers: { 'X-Bansify-Authuser': '9' } }),
+    req('/api/session', { cookie: 'gothwad_at=good', headers: { 'X-Gothwad-Authuser': '9' } }),
     h.env
   );
   const upstream = h.seen.find((s) => s.url.host === 'accounts.test');
-  assert.equal(upstream?.headers.get('x-bansify-authuser'), null);
+  assert.equal(upstream?.headers.get('x-gothwad-authuser'), null);
 });
 
 test('bearer sessions still work, with a single-account list', async () => {

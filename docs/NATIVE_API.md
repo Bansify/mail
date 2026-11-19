@@ -1,18 +1,18 @@
 # Native app support: OAuth, search, bulk actions and App Links
 
-`GothwadTech/mailapp` (Android, package `com.gothwad.mail`) uses this Worker as its only backend.
+`Bansify/mailapp` (Android, package `com.gothwad.mail`) uses this Worker as its only backend.
 The web app keeps using cookie SSO and nothing here changes its behaviour: a request with an
 `Authorization` header never reads cookies, and a cookie request never calls the OAuth endpoint.
 
-## OAuth contract (owned by Gothwad Accounts)
+## OAuth contract (owned by Bansify Accounts)
 
-Registration in `GothwadTech/accounts` (`migrations/0014_first_party_native.sql`):
+Registration in `Bansify/accounts` (`migrations/0014_first_party_native.sql`):
 
 | Field | Value |
 | --- | --- |
 | `client_id` | `gothwad-mail` |
 | `android_package` | `com.gothwad.mail` |
-| `redirect_uris` | `https://mail.gothwadtech.com/oauth/callback`, `com.gothwad.mail:/oauth/callback` |
+| `redirect_uris` | `https://mail.bansify.com/oauth/callback`, `com.gothwad.mail:/oauth/callback` |
 | `allowed_scopes` | `profile`, `email`, `offline_access`, `mail` |
 
 `GET {AUTH_HUB_URL}/api/oauth/userinfo` with the access token answers:
@@ -28,7 +28,7 @@ Registration in `GothwadTech/accounts` (`migrations/0014_first_party_native.sql`
   "name": "Alice Sharma",
   "given_name": "Alice",
   "family_name": "Sharma",
-  "email": "alice@gothwadtech.com",
+  "email": "alice@bansify.com",
   "email_verified": true,
   "picture": "https://…"
 }
@@ -46,7 +46,7 @@ Registration in `GothwadTech/accounts` (`migrations/0014_first_party_native.sql`
 | Scopes (array `scopes` or string `scope`) do not include `mail` | **403 `insufficient_scope`** (`requiredScope`) |
 | Network error, timeout, 3xx, 5xx, HTML or a body Mail cannot read | **503** (`auth_unavailable` / `accounts_unexpected_response`) |
 
-A valid token for another Gothwad app (Store, Tube) is a 403, never a 401: it is not a
+A valid token for another Bansify app (Store, Tube) is a 403, never a 401: it is not a
 signed-out user, and a 401 would make the app throw the token away and loop through sign-in.
 `preferred_username` still has to pass the same username rule as the cookie path, and the email
 is always derived as `username@APP_DOMAIN`.
@@ -54,8 +54,8 @@ is always derived as `username@APP_DOMAIN`.
 A bearer session carries exactly one account:
 
 ```json
-{ "id": "bearer", "authuser": 0, "username": "alice", "email": "alice@gothwadtech.com",
-  "accountUrl": "https://accounts.gothwadtech.com/me", "lastUsedAt": null }
+{ "id": "bearer", "authuser": 0, "username": "alice", "email": "alice@bansify.com",
+  "accountUrl": "https://accounts.bansify.com/me", "lastUsedAt": null }
 ```
 
 That is what makes `GET /api/session` and `GET /api/session/meta` return

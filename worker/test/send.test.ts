@@ -73,7 +73,7 @@ test('send uses username@APP_DOMAIN, saves a gzipped Sent copy and removes the d
 
   const resend = h.seen.find((s) => s.url.host === 'api.resend.com');
   const payload = JSON.parse(resend?.body || '{}');
-  assert.equal(payload.from, 'alice@bansifytech.com');
+  assert.equal(payload.from, 'alice@bansify.com');
   assert.deepEqual(payload.to, ['bob@example.com']);
   assert.deepEqual(payload.cc, ['carol@example.com']);
   assert.equal(payload.subject.includes('\n'), false, 'no header injection via subject');
