@@ -86,20 +86,20 @@ test('the Android OAuth bridge and its app-link file are shipped', () => {
   const bridge = read('public/oauth/callback/index.html');
   // The bridge must hand the untouched query back to the app's own scheme.
   assert.match(bridge, /com\.gothwad\.mail:\/oauth\/callback/);
-  assert.match(bridge, /package=com\.gothwad\.mail/, 'the intent:// fallback names the shipped package');
-  // The alternate id is offered as a second, labelled button only.
-  assert.match(bridge, /com\.bansify\.mail:\/oauth\/callback/);
+  assert.match(bridge, /package=com\.bansify\.mail/, 'the intent:// fallback names the current package');
+  // The legacy id is offered as a second, labelled button only.
+  assert.match(bridge, /com\.gothwad\.mail:\/oauth\/callback/);
   assert.equal(bridge.includes('oauth/token'), false, 'the bridge never exchanges the code itself');
 
   const links = JSON.parse(read('public/.well-known/assetlinks.json')) as Array<{
     relation: string[];
     target: { namespace: string; package_name: string; sha256_cert_fingerprints: string[] };
   }>;
-  // Both ids are declared: `com.gothwad.mail` is what the shipped APK uses, and
-  // `com.bansify.mail` is ready for a future re-release under the new id.
+  // Both ids are declared: `com.bansify.mail` is the current APK id, and
+  // `com.gothwad.mail` stays for legacy installs.
   assert.equal(links.length, 2);
-  assert.equal(links[0].target.package_name, 'com.gothwad.mail', 'the shipped APK id comes first');
-  assert.equal(links[1].target.package_name, 'com.bansify.mail');
+  assert.equal(links[0].target.package_name, 'com.bansify.mail', 'the current APK id comes first');
+  assert.equal(links[1].target.package_name, 'com.gothwad.mail', 'the legacy id stays listed');
   assert.equal(links[0].target.namespace, 'android_app');
   for (const link of links) {
     assert.equal(link.target.namespace, 'android_app');

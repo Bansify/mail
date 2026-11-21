@@ -28,7 +28,7 @@ Internet mail ──► Email Routing (catch-all) ──► Mail Worker email()
 
 ### The native app (OAuth + App Links)
 
-`Bansify/mailapp` (package `com.gothwad.mail`) is a public PKCE client registered in
+`Bansify/mailapp` (package `com.bansify.mail`) is a public PKCE client registered in
 Accounts as `gothwad-mail` with the scopes `profile`, `email`, `offline_access` and `mail`. It
 calls this API with `Authorization: Bearer <access_token>`; cookie requests never mix with it.
 Sign-in returns to `/oauth/callback`, a static bridge that forwards the untouched query to the
