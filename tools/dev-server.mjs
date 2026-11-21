@@ -2,19 +2,19 @@
  * =============================================================================
  * LOCAL FULL-STACK PREVIEW SERVER (`npm run preview:api`)
  * =============================================================================
- * WHY: production me `env.DB` Cloudflare D1 hota hai. Local preview me hum
- * ASLI SQLite (node:sqlite) ko D1 jaisa adapter dete hain, aur wahi Worker
- * (`worker/src/index.ts`) chalate hain jo production me chalta hai - koi
- * duplicate Express/server.js nahi.
+ * WHY: in production `env.DB` is Cloudflare D1. The local preview gives the
+ * REAL SQLite driver (node:sqlite) a D1-shaped adapter and runs the same Worker
+ * entry point (`worker/src/index.ts`) that production runs, so there is no
+ * second Express/server.js to keep in sync.
  *
- *   browser (Vite :3000) --/api--> yeh server (:8787) --> LocalD1 (SQLite)
+ *   browser (Vite :3000) --/api--> this server (:8787) --> LocalD1 (SQLite)
  *
- * Auth: preview browser ke paas Accounts cookie nahi hoti, isliye Worker ka
- * dev-only bypass (`DEV_AUTH_USERNAME`) use hota hai. Lekin agar request ke
- * saath `gothwad_*` cookie aaye (UI smoke test aise karta hai), to yeh server
- * ek LOCAL Accounts stub ki tarah answer karta hai - 401 / 503 branches bhi
- * isliye test ho sakti hain. Resend ka call bhi local me fake hota hai.
- * Koi real email kabhi nahi jata aur koi real key nahi chahiye.
+ * Auth: a preview browser has no Accounts cookie, so the Worker's dev-only
+ * bypass (`DEV_AUTH_USERNAME`) is used. If a request DOES carry an Accounts
+ * cookie (`gothwad_*` or the renamed `bansify_*`; the UI smoke test sends one),
+ * this server answers as a LOCAL Accounts stub instead, so the 401 and 503
+ * branches are testable too. The Resend call is faked locally as well: no real
+ * email is ever sent and no real key is needed.
  * =============================================================================
  */
 
@@ -51,10 +51,11 @@ const env = {
 };
 
 // Local only: a two-account Accounts stub that mirrors the live v2.3 contract
-// (per-slot cookies, X-Gothwad-Authuser, single-call /auth/me with accounts).
-// The active account is still a cookie (`gothwad_active`), exactly like the real
-// service, so a switch survives a reload and the rest of the Worker code is
-// untouched.
+// (per-slot cookies, the authuser header, single-call /auth/me with accounts).
+// The active account is still a cookie (`gothwad_active` / `bansify_active`),
+// exactly like the real service, so a switch survives a reload and the rest of
+// the Worker code is untouched. Both cookie prefixes and both authuser header
+// spellings are accepted, because Accounts today issues the Gothwad ones.
 const LOCAL_ACCOUNTS = [
   { id: 'a', authuser: 0, username: 'alice', firstName: 'Alice', lastName: 'Sharma' },
   { id: 'b', authuser: 1, username: 'bob', firstName: 'Bob', lastName: 'Verma' },
@@ -65,7 +66,7 @@ const signedOutSlots = new Set();
 const liveAccounts = () => LOCAL_ACCOUNTS.filter((a) => !signedOutSlots.has(a.id));
 
 function activeSlot(cookie) {
-  const match = /gothwad_active=([a-f])/.exec(cookie || '');
+  const match = /(?:gothwad|bansify)_active=([a-f])/.exec(cookie || '');
   const id = match && match[1];
   return liveAccounts().some((a) => a.id === id) ? id : liveAccounts()[0]?.id ?? 'a';
 }
@@ -108,6 +109,7 @@ function accountsResponse(account, extra = {}) {
     ...extra,
   });
   res.headers.append('set-cookie', `gothwad_active=${account.id}; Path=/; SameSite=Lax`);
+  res.headers.append('set-cookie', `bansify_active=${account.id}; Path=/; SameSite=Lax`);
   return res;
 }
 
@@ -122,8 +124,11 @@ globalThis.fetch = async (input, init) => {
   if (url.startsWith(`${env.AUTH_HUB_URL}/api/auth/me`)) {
     const headers = new Headers(init?.headers);
     const cookie = headers.get('cookie') || '';
-    if (cookie.includes('gothwad_at=good')) {
-      const account = selectedAccount(cookie, headers.get('x-gothwad-authuser'));
+    if (/(?:gothwad|bansify)_at=good/.test(cookie)) {
+      const account = selectedAccount(
+        cookie,
+        headers.get('x-gothwad-authuser') ?? headers.get('x-bansify-authuser')
+      );
       if (!account) return Response.json({ authenticated: false }, { status: 401 });
       return accountsResponse(account, {
         authenticated: true,
@@ -135,7 +140,7 @@ globalThis.fetch = async (input, init) => {
         },
       });
     }
-    if (cookie.includes('gothwad_at=no_username')) {
+    if (/(?:gothwad|bansify)_at=no_username/.test(cookie)) {
       return Response.json({ authenticated: true, user: { username: '' } });
     }
     return Response.json({ authenticated: false }, { status: 401 });
@@ -206,8 +211,8 @@ async function seedMailbox(mailDb, username) {
       subject: 'Welcome to Bansify Mail (local preview)',
       fromEmail: 'team@bansify.com',
       fromName: 'Bansify Team',
-      text: 'Namaste! Yeh ek local preview hai. D1 SQLite asli hai, data sirf aapke browser session ke liye hai.\nSettings me jaakar retention 500 / 1500 / Store All test karein.',
-      html: '<h2>Namaste! 🙏</h2><p>Yeh <b>local preview</b> hai. Mail bodies gzip hokar D1 (SQLite) me store hoti hain.</p>',
+      text: 'Welcome. This is a local preview: the D1 database is real SQLite, and the data lives only in your browser session.\nOpen Settings to try retention 500 / 1500 / Store All.',
+      html: '<h2>Welcome 🙏</h2><p>This is the <b>local preview</b>. Message bodies are gzipped and stored in D1 (SQLite).</p>',
       isStarred: true,
       ageDays: 1,
     },
@@ -266,8 +271,8 @@ async function seedMailbox(mailDb, username) {
     fromName: 'Pawan',
     to: ['hello@example.com'],
     subject: 'Testing Bansify Mail',
-    text: 'Hi! Yeh mail local preview se bheja gaya hai (Resend fake).',
-    html: '<p>Hi! Yeh mail local preview se bheja gaya hai.</p>',
+    text: 'Hi! This mail was sent from the local preview (Resend is faked).',
+    html: '<p>Hi! This mail was sent from the local preview.</p>',
     isRead: true,
     providerId: 'local_seed',
     receivedAt: new Date(now - 2 * day).toISOString(),
@@ -354,7 +359,9 @@ const server = http.createServer(async (req, res) => {
     // bypass: that way the account switcher is visible locally, and the request
     // still goes through the real cookie path the production browser uses.
     const worksWithCookies = Boolean(req.headers.cookie);
-    if (!worksWithCookies) headers.set('cookie', 'gothwad_at=good');
+    // Both cookie prefixes are set, so the local stub exercises the dual
+    // `gothwad_*` / `bansify_*` support instead of only the legacy name.
+    if (!worksWithCookies) headers.set('cookie', 'gothwad_at=good; bansify_at=good');
 
     // Local test hook: forget the simulated sign-outs so each UI test starts
     // with alice and bob signed in. Never part of the Worker's API surface.

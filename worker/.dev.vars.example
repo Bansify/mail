@@ -4,6 +4,12 @@
 # Local D1: `wrangler dev` creates its own local SQLite copy of the `mail`
 # database automatically. The Worker bootstraps the tables on the first request,
 # so no SQL step is needed. Use `--remote` only when you mean the real database.
+# Domains come from `worker/wrangler.toml` [vars] in production. For local runs
+# where you want to point at the deployed services, set them here instead:
+#   APP_DOMAIN=bansify.com
+#   AUTH_HUB_URL=https://api.bansify.com
+#   AUTH_SIGNIN_URL=https://accounts.bansify.com
+#   MAIL_URL=https://mail.bansify.com
 ENVIRONMENT=development
 ACCOUNTS_INTERNAL_TOKEN=REPLACE_ME
 RESEND_API_KEY=re_REPLACE_ME

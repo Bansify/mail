@@ -68,7 +68,8 @@ public config (`wrangler.toml` `[vars]`), not secrets.
 5. Bearer tokens (`Authorization: Bearer ...`) are for the native Android app
    (`Bansify/mailapp`). They are checked with
    `GET {AUTH_HUB_URL}/api/oauth/userinfo`, and the answer must belong to **this** app:
-   `client_id` or `aud` must be `gothwad-mail`, and the granted scopes must include `mail`.
+   `client_id` or `aud` must be `gothwad-mail` (or `bansify-mail` after an Accounts-side
+   rename), and the granted scopes must include `mail`.
    A token minted for another Bansify app (Store, Tube) or a token without `mail` is refused
    with **403 `insufficient_scope`** — not a 401, because the token is valid and the client must
    not throw it away. The web app does not use bearer tokens at all.
@@ -336,7 +337,8 @@ mail/u/1/  →   /u/1/           (alias, rewritten on boot)
   the account.
 * `navigateToAccount()` pushes `/u/<n>/#<folder>` and a `popstate` listener treats Back/Forward
   as an account switch, so browser navigation behaves like the switcher.
-* Every API call spreads `authUserHeaders()` → `X-Gothwad-Authuser: <n>`. The Worker validates
+* Every API call spreads `authUserHeaders()` → `X-Gothwad-Authuser: <n>` plus the
+  `X-Bansify-Authuser` spelling, and the Worker accepts either name. The Worker validates
   it and forwards it to Accounts as the tab selector, so **two tabs of the same browser**, one
   cookie jar, two different mailboxes. Reading a slot never rotates another tab's session.
 * `MailProvider` is keyed by the slot id, and mailbox caches are per slot

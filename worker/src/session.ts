@@ -40,8 +40,18 @@ export const ACCOUNTS_UNEXPECTED_RESPONSE = 'accounts_unexpected_response';
 export const ACCOUNTS_USER_INVALID = 'accounts_user_invalid';
 export const INSUFFICIENT_SCOPE = 'insufficient_scope';
 
-/** The OAuth client this Worker serves (Bansify Accounts `ecosystem_apps`). */
+/**
+ * The OAuth client this Worker serves (Bansify Accounts `ecosystem_apps`).
+ *
+ * `gothwad-mail` is the id registered in the live deployment today. `bansify-mail`
+ * is accepted as well so Accounts can rename the client without breaking Mail:
+ * a token minted for either id opens this mailbox, nothing else does.
+ */
 export const MAIL_OAUTH_CLIENT_ID = 'gothwad-mail';
+export const ACCEPTED_MAIL_OAUTH_CLIENT_IDS: ReadonlySet<string> = new Set([
+  'gothwad-mail',
+  'bansify-mail',
+]);
 /** The scope that allows reading and sending a mailbox through this API. */
 export const MAIL_OAUTH_SCOPE = 'mail';
 
@@ -97,12 +107,16 @@ export function takeUpstreamCookies(request: Request): string[] {
 /** Re-exported for the account switcher (see accounts.ts): it must forward the
  * rotated Accounts cookies exactly like the session check does. */
 export function keepAccountsCookies(request: Request, res: Response): void {
-  // Only Accounts' own gothwad_* cookies. Anything else from upstream is ignored.
+  // Only Accounts' own session cookies. Anything else from upstream is ignored.
+  // BOTH prefixes are forwarded on purpose: the live `Bansify/accounts` deployment
+  // still issues `gothwad_*` (at/rt/sid/sess_*/active/accounts), while a future
+  // rename to `bansify_*` must keep working without a synchronised release. A
+  // cookie that does not match either prefix is never forwarded.
   // getSetCookie() gives each Set-Cookie separately (get() would join them).
   // Our worker type lib does not declare it yet, so we cast.
   const h = res.headers as Headers & { getSetCookie?: () => string[] };
   const all = h.getSetCookie ? h.getSetCookie() : [];
-  const cookies = all.filter((c) => /^gothwad_[a-z_]+=/i.test(c));
+  const cookies = all.filter((c) => /^(?:gothwad|bansify)_[a-z0-9_]+=/i.test(c));
   if (cookies.length > 0) upstreamCookies.set(request, cookies);
 }
 
@@ -167,7 +181,13 @@ async function resolveCookie(request: Request, cookie: string, config: Config): 
   // resolves that slot and does NOT touch the browser-wide active cookie.
   const selector = authUserFromRequest(request);
   const headers: Record<string, string> = { cookie, accept: 'application/json' };
-  if (selector) headers['x-gothwad-authuser'] = selector;
+  if (selector) {
+    // Accounts reads `X-Gothwad-Authuser` today and also tolerates the new name,
+    // so both are sent: the live deployment keeps working and a future rename needs
+    // no Mail release. See `authUserHeaders()` in src/services/authuser.ts.
+    headers['x-gothwad-authuser'] = selector;
+    headers['x-bansify-authuser'] = selector;
+  }
 
   const res = await upstream(`${config.authHubUrl}/api/auth/me`, headers);
   keepAccountsCookies(request, res);
@@ -264,7 +284,10 @@ function assertMailToken(body: OAuthUserInfoBody, res: Response): void {
   const audience = typeof body.aud === 'string' ? body.aud.trim() : '';
   const scopes = grantedScopes(body);
 
-  if (clientId !== MAIL_OAUTH_CLIENT_ID && audience !== MAIL_OAUTH_CLIENT_ID) {
+  const validClient =
+    (clientId !== '' && ACCEPTED_MAIL_OAUTH_CLIENT_IDS.has(clientId)) ||
+    (audience !== '' && ACCEPTED_MAIL_OAUTH_CLIENT_IDS.has(audience));
+  if (!validClient) {
     warnUpstreamFailure(INSUFFICIENT_SCOPE, res);
     throw new HttpError(403, INSUFFICIENT_SCOPE, 'OAuth token is not authorized for Bansify Mail.', {
       requiredClient: MAIL_OAUTH_CLIENT_ID,

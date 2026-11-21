@@ -89,7 +89,9 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
     if (setCookieHeader) {
       for (const pair of setCookieHeader.split(/,(?=[^;]+?=)/)) {
         const name = pair.split('=')[0].trim();
-        if (name && name.startsWith('gothwad_')) {
+        // Both prefixes: the live Accounts deployment sets `gothwad_*`, and a
+        // renamed one would set `bansify_*`. The jar must keep either.
+        if (name && (name.startsWith('gothwad_') || name.startsWith('bansify_'))) {
           activeCookie = activeCookie
             .split(';')
             .map((c) => c.trim())

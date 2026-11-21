@@ -23,8 +23,8 @@ Bansify Mail is a webmail app for `username@APP_DOMAIN` addresses.
   fetch** and must reach the Accounts Worker (its Custom Domain, `api.bansify.com`);
   `AUTH_SIGNIN_URL` is for **browser links only** (the 401 `signinUrl` and `accountUrl`) and
   falls back to `AUTH_HUB_URL` when unset. A bearer token is only accepted when Accounts issued
-  it to `gothwad-mail` **and** it carries the `mail` scope (otherwise 403 `insufficient_scope`);
-  see `docs/NATIVE_API.md`.
+  it to `gothwad-mail` (or `bansify-mail` after an Accounts-side rename) **and** it carries the
+  `mail` scope (otherwise 403 `insufficient_scope`); see `docs/NATIVE_API.md`.
 
 Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup steps.
 
@@ -79,7 +79,8 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
    own code. `src/components/AccountSheetFallback.tsx` exists only for the case where that
    script cannot load; it must never become the default.
 11e. **Every tab owns one account.** Canonical URL is `/u/<n>/[#folder]`; every request carries
-   `X-Gothwad-Authuser: <n>`, and the Worker passes it to Accounts as the tab selector. Never
+   the authuser header in **both** spellings (`X-Gothwad-Authuser` and `X-Bansify-Authuser`),
+   and the Worker passes both to Accounts as the tab selector. Never
    read or write another tab's account, and never let an old account's row paint after a switch
    (`MailProvider` is keyed by slot id).
 11d. **Keep the shell responsive.** Use `100dvh` + flex `min-h-0` (no magic pixel heights),
@@ -157,8 +158,9 @@ Read `docs/MAIL.md` for how it works and `docs/SETUP.md` for the human setup ste
 - Draft autosave duplicated drafts when the draft id was read from a stale closure. Fixed
   with refs and a single-flight flush in `MailContext.tsx`. Keep it that way.
 - `decodeURIComponent` throws on bad `%` input. It is wrapped and returns 400.
-- The Worker must forward rotated `gothwad_*` Set-Cookie headers from Accounts to the
-  browser. Dropping them signs the user out of Accounts (refresh-token rotation).
+- The Worker must forward rotated Accounts cookies (`gothwad_*`, and `bansify_*` after a
+  rename) to the browser. Dropping them signs the user out of Accounts (refresh-token
+  rotation). Never widen that filter to every upstream cookie.
 - Do **not** collapse an Accounts answer Mail cannot read (3xx, HTML, missing `authenticated`,
   unusable username) into a signed-out 401. That made a broken Accounts handoff look like an
   expired session and bounced users through the chooser. Mail returns 401 only for an Accounts

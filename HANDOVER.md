@@ -1,8 +1,22 @@
 # HANDOVER.md — where this repository stands
 
-Last updated: 2026-10-20. Read this first if you are picking the work up.
+Last updated: 2026-10-21. Read this first if you are picking the work up.
 
-## Latest: the app is called Bansify Mail, the wire format is unchanged
+## Latest: wire compatibility — accept both names, prefer the live one
+
+`worker/src/session.ts` now forwards rotated cookies matching `^(?:gothwad|bansify)_[a-z0-9_]+=`
+(and nothing else), accepts either `X-Gothwad-Authuser` / `X-Bansify-Authuser` on incoming
+requests and sends **both** upstream on `/auth/me` and `/auth/switch`, and accepts a Bearer token
+minted for either `gothwad-mail` or `bansify-mail` (`ACCEPTED_MAIL_OAUTH_CLIENT_IDS`; any other
+client is still 403 `insufficient_scope`). `assetlinks.json` lists both `com.gothwad.mail`
+(shipped APK id, first) and `com.bansify.mail`; the OAuth bridge offers the second id as a
+labelled alternative button. The local widget stub, dev server, jsdom cookie jar and test
+helpers all understand both prefixes.
+
+Rule of thumb: **display text is Bansify, wire identifiers are whatever Accounts issues today,
+and Mail accepts both spellings so neither side needs a synchronised release.**
+
+## Previous: the app is called Bansify Mail, the wire format is unchanged
 
 Display text, `<title>`, the manifest, the OAuth bridge page and the docs now say **Bansify**, and
 the domain config points at `bansify.com` (`api.` / `accounts.` / `mail.`). The identifiers that

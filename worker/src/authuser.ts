@@ -8,7 +8,9 @@
 // Tab B on /u/1 is signed in as work.
 //
 // Accounts accepts the selector in three forms, and we pass all three through:
-//   X-Gothwad-Authuser: 0        (header, used by every Mail API call)
+//   X-Gothwad-Authuser: 0        (header, used by every Mail API call; the
+//                                 X-Bansify-Authuser spelling is accepted too,
+//                                 so either client name keeps working)
 //   ?authuser=0 / ?u=0           (query, used by links and first paint)
 //   slot id 'a'..'f' | username  (also accepted upstream)
 //
@@ -47,7 +49,9 @@ export function normalizeAuthUser(raw: unknown): string | null {
  * before the app has booted). This is the ONLY place the selector is read.
  */
 export function authUserFromRequest(request: Request): string | null {
-  const header = normalizeAuthUser(request.headers.get('x-gothwad-authuser'));
+  const header = normalizeAuthUser(
+    request.headers.get('x-gothwad-authuser') ?? request.headers.get('x-bansify-authuser')
+  );
   if (header) return header;
 
   const url = new URL(request.url);

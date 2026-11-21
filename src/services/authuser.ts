@@ -7,15 +7,18 @@
 //   /?login=1&authuser=1         Gmail's post-sign-in URL
 //
 // The number in the URL is the ONLY source of truth for which account a tab is
-// showing. Every API call sends it as `X-Gothwad-Authuser`, so two tabs on
-// /u/0/ and /u/1/ read and send as two different accounts even though they share
-// one cookie jar. Nothing here is stored in localStorage/sessionStorage: a tab's
-// identity is in its URL, so a duplicate tab and Back/Forward keep working.
+// showing. Every API call sends it as `X-Gothwad-Authuser` (plus the
+// `X-Bansify-Authuser` spelling, so either side of the rename works), so two tabs
+// on /u/0/ and /u/1/ read and send as two different accounts even though they
+// share one cookie jar. Nothing here is stored in localStorage/sessionStorage: a
+// tab's identity is in its URL, so a duplicate tab and Back/Forward keep working.
 // =============================================================================
 
 import type { EmailFolder } from '../types/email';
 
 export const AUTHUSER_HEADER = 'X-Gothwad-Authuser';
+/** The renamed spelling of the same header. Sent alongside, never instead. */
+export const AUTHUSER_HEADER_ALIAS = 'X-Bansify-Authuser';
 export const MAX_AUTHUSER = 5;
 
 const FOLDERS: readonly EmailFolder[] = ['inbox', 'starred', 'sent', 'drafts', 'trash'];
@@ -56,9 +59,14 @@ export function currentAuthUser(): number {
   return validIndex(params.get('authuser')) ?? validIndex(params.get('u')) ?? 0;
 }
 
-/** Header object for a fetch call. `authuser` is always present (0..5). */
+/**
+ * Header object for a fetch call. `authuser` is always present (0..5).
+ *
+ * Both spellings go out. The Worker and Accounts match the Gothwad name today;
+ * the Bansify name means nothing breaks when either side renames first.
+ */
 export function authUserHeaders(index = currentAuthUser()): Record<string, string> {
-  return { [AUTHUSER_HEADER]: String(index) };
+  return { [AUTHUSER_HEADER]: String(index), [AUTHUSER_HEADER_ALIAS]: String(index) };
 }
 
 /** Canonical path for an account + folder. */

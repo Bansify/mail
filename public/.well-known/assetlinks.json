@@ -1,9 +1,23 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.gothwad.mail",
+      "sha256_cert_fingerprints": [
+        "50:4E:2F:C7:8A:B6:8E:01:8B:84:8F:C1:02:76:2E:44:99:A0:88:03:41:2E:66:A4:0B:2B:09:40:3C:61:49:B6"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bansify.mail",
       "sha256_cert_fingerprints": [
         "50:4E:2F:C7:8A:B6:8E:01:8B:84:8F:C1:02:76:2E:44:99:A0:88:03:41:2E:66:A4:0B:2B:09:40:3C:61:49:B6"
       ]
