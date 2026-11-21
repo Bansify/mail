@@ -1,6 +1,6 @@
 # Native app support: OAuth, search, bulk actions and App Links
 
-`Bansify/mailapp` (Android, package `com.gothwad.mail`) uses this Worker as its only backend.
+`Bansify/mailapp` (Android, package `com.bansify.mail`) uses this Worker as its only backend.
 The web app keeps using cookie SSO and nothing here changes its behaviour: a request with an
 `Authorization` header never reads cookies, and a cookie request never calls the OAuth endpoint.
 
@@ -11,7 +11,7 @@ Registration in `Bansify/accounts` (`migrations/0014_first_party_native.sql`):
 | Field | Value |
 | --- | --- |
 | `client_id` | `gothwad-mail` (the id Accounts registers today; `bansify-mail` is accepted too) |
-| `android_package` | `com.gothwad.mail` |
+| `android_package` | `com.bansify.mail` |
 | `redirect_uris` | `https://mail.bansify.com/oauth/callback`, `com.gothwad.mail:/oauth/callback` |
 | `allowed_scopes` | `profile`, `email`, `offline_access`, `mail` |
 
@@ -121,8 +121,8 @@ client keeps working with `{ isRead?, isStarred?, moveToTrash? }`.
 
 | File | Job |
 | --- | --- |
-| `public/oauth/callback/index.html` | Static page: reads the query Accounts returned, then forwards it unchanged to `com.gothwad.mail:/oauth/callback` (Chrome on Android also gets an `intent://` hop). A second, labelled button also offers `com.bansify.mail:/oauth/callback`. It never exchanges the code, never stores anything, and always offers a button plus "continue in the browser". |
-| `public/.well-known/assetlinks.json` | Android App Links verification for `com.gothwad.mail` (the shipped APK id) and `com.bansify.mail` (ready for a re-release), each with the SHA-256 certificate fingerprint. |
+| `public/oauth/callback/index.html` | Static page: reads the query Accounts returned, then forwards it unchanged to `com.bansify.mail:/oauth/callback` (Chrome on Android also gets an `intent://` hop). A second, labelled button also offers the legacy `com.gothwad.mail:/oauth/callback`. It never exchanges the code, never stores anything, and always offers a button plus "continue in the browser". |
+| `public/.well-known/assetlinks.json` | Android App Links verification for `com.bansify.mail` (the current APK id) and `com.gothwad.mail` (legacy installs), each with the SHA-256 certificate fingerprint. |
 
 Both paths are pinned ahead of the SPA rewrite in `public/_redirects`, and `/oauth/` is excluded
 from the service worker's navigation fallback (`vite.config.ts`), so an installed PWA cannot

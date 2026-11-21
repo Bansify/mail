@@ -96,8 +96,8 @@
       </div>
       <h1>Opening Bansify Mail</h1>
       <p id="status">Handing this sign-in back to the Mail app…</p>
-      <a class="button" id="open-app" href="com.gothwad.mail:/oauth/callback">Open the Mail app</a>
-      <a class="secondary" id="open-app-alt" href="com.bansify.mail:/oauth/callback">App not installed after a rename? Try the other ID</a>
+      <a class="button" id="open-app" href="com.bansify.mail:/oauth/callback">Open the Mail app</a>
+      <a class="secondary" id="open-app-alt" href="com.gothwad.mail:/oauth/callback">App not installed? Try the legacy ID</a>
       <a class="secondary" id="open-web" href="/">Continue in the browser instead</a>
     </main>
 
@@ -129,8 +129,8 @@
         var SEARCH = window.location.search || '';
         var HASH = window.location.hash || '';
         var TAIL = SEARCH + HASH;
-        var SCHEME = 'com.gothwad.mail:/oauth/callback';
-        var SCHEME_ALT = 'com.bansify.mail:/oauth/callback';
+        var SCHEME = 'com.bansify.mail:/oauth/callback';
+        var SCHEME_ALT = 'com.gothwad.mail:/oauth/callback';
         var HTTPS = window.location.origin + '/oauth/callback';
         var ua = navigator.userAgent || '';
         var isAndroid = /Android/i.test(ua);
@@ -157,7 +157,7 @@
         var intent =
           'intent://mail.bansify.com/oauth/callback' +
           TAIL +
-          '#Intent;scheme=https;package=com.gothwad.mail;' +
+          '#Intent;scheme=https;package=com.bansify.mail;' +
           'action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 
         // A visible fallback first: if the automatic hop is blocked, the button
