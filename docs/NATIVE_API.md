@@ -10,7 +10,7 @@ Registration in `Bansify/accounts` (`migrations/0014_first_party_native.sql`):
 
 | Field | Value |
 | --- | --- |
-| `client_id` | `gothwad-mail` |
+| `client_id` | `gothwad-mail` (the id Accounts registers today; `bansify-mail` is accepted too) |
 | `android_package` | `com.gothwad.mail` |
 | `redirect_uris` | `https://mail.bansify.com/oauth/callback`, `com.gothwad.mail:/oauth/callback` |
 | `allowed_scopes` | `profile`, `email`, `offline_access`, `mail` |
@@ -42,7 +42,7 @@ Registration in `Bansify/accounts` (`migrations/0014_first_party_native.sql`):
 | Check | Failure |
 | --- | --- |
 | Accounts answers 401/403 | Mail **401 `unauthenticated`** with `signinUrl` — the app may refresh its token |
-| `client_id` **or** `aud` is not `gothwad-mail` | **403 `insufficient_scope`** (`requiredClient`) |
+| `client_id` **or** `aud` is neither `gothwad-mail` nor `bansify-mail` | **403 `insufficient_scope`** (`requiredClient`) |
 | Scopes (array `scopes` or string `scope`) do not include `mail` | **403 `insufficient_scope`** (`requiredScope`) |
 | Network error, timeout, 3xx, 5xx, HTML or a body Mail cannot read | **503** (`auth_unavailable` / `accounts_unexpected_response`) |
 
@@ -121,8 +121,8 @@ client keeps working with `{ isRead?, isStarred?, moveToTrash? }`.
 
 | File | Job |
 | --- | --- |
-| `public/oauth/callback/index.html` | Static page: reads the query Accounts returned, then forwards it unchanged to `com.gothwad.mail:/oauth/callback` (Chrome on Android also gets an `intent://` hop). It never exchanges the code, never stores anything, and always offers a button plus "continue in the browser". |
-| `public/.well-known/assetlinks.json` | Android App Links verification for `com.gothwad.mail` (SHA-256 certificate fingerprint). |
+| `public/oauth/callback/index.html` | Static page: reads the query Accounts returned, then forwards it unchanged to `com.gothwad.mail:/oauth/callback` (Chrome on Android also gets an `intent://` hop). A second, labelled button also offers `com.bansify.mail:/oauth/callback`. It never exchanges the code, never stores anything, and always offers a button plus "continue in the browser". |
+| `public/.well-known/assetlinks.json` | Android App Links verification for `com.gothwad.mail` (the shipped APK id) and `com.bansify.mail` (ready for a re-release), each with the SHA-256 certificate fingerprint. |
 
 Both paths are pinned ahead of the SPA rewrite in `public/_redirects`, and `/oauth/` is excluded
 from the service worker's navigation fallback (`vite.config.ts`), so an installed PWA cannot

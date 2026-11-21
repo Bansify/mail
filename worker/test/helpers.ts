@@ -131,11 +131,16 @@ export function oauthUserInfo(overrides: Record<string, unknown> = {}): Record<s
   };
 }
 
-/** Accounts stub that treats the cookie "gothwad_at=good" as user alice. */
+/**
+ * Accounts stub that treats `gothwad_at=good` (or the renamed
+ * `bansify_at=good`) as user alice. Both prefixes are honoured on purpose: the
+ * live deployment issues the first one and the second one must not break.
+ */
 export function accountsStub(s: Seen): Response | null {
   if (s.url.origin !== 'https://accounts.test') return null;
   if (s.url.pathname === '/api/auth/me') {
-    if (s.headers.get('cookie') === 'gothwad_at=good') {
+    const cookie = s.headers.get('cookie') ?? '';
+    if (/(?:^|;\s*)(?:gothwad|bansify)_at=good$/.test(cookie)) {
       return Response.json({
         authenticated: true,
         user: { username: 'Alice', first_name: 'Alice', last_name: 'Sharma' },

@@ -3,9 +3,14 @@
  *
  * Production loads the real thing from `${accountsWebOrigin}/widget/account-menu.js`
  * (Accounts repo: `web/widget/account-menu*.js`). This file exists so the dev
- * server can serve the same URL and the same `window.GothwadAccountMenu` API, so
- * `npm run dev` and the jsdom tests exercise the real integration path instead of
- * a compile-time mock.
+ * server can serve the same URL and the same global menu API, so `npm run dev`
+ * and the jsdom tests exercise the real integration path instead of a
+ * compile-time mock.
+ *
+ * The global is published under BOTH names (`BansifyAccountMenu` and the legacy
+ * `GothwadAccountMenu`) because the live Accounts widget still uses the second
+ * one, while Mail prefers the first. That way the stub proves the loader's
+ * fallback rather than a name neither side ships.
  *
  * It is intentionally a subset: the same state/opts contract, the same rows and
  * the same callbacks. Visual polish belongs to Accounts, not here.
@@ -260,8 +265,11 @@ class Controller {
   }
 }
 
-export const GothwadAccountMenu = new Controller();
+export const BansifyAccountMenu = new Controller();
+/** Legacy alias: Accounts publishes this name today, so the stub does too. */
+export const GothwadAccountMenu = BansifyAccountMenu;
 
 if (globalThis.window) {
+  globalThis.window.BansifyAccountMenu = BansifyAccountMenu;
   globalThis.window.GothwadAccountMenu = GothwadAccountMenu;
 }

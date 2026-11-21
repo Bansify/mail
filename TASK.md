@@ -2,46 +2,46 @@
 
 Updated every session. Newest first.
 
-## 2026-10-20 — Rebrand to Bansify, without touching what Accounts issues
+## 2026-10-21 — Accounts wire compatibility (the `MAIL_BACKEND_AGENT_PROMPT.md` fixes)
 
-**Owner request:** the repos moved from `GothwadTech` to `Bansify`, so the product should say
-Bansify everywhere a person reads it — while the live `Bansify/accounts` keeps the same
-identifiers. **Note:** #17 (`rename-app-to-bansify`) is already in `main` (`9e92a89`); it renamed
-the wire identifiers, so `main` currently asks Accounts for an app it has never heard of. This
-branch keeps #17's brand text and puts the identifiers back.
+**Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` in `Bansify/accounts` and apply every
+code fix in `Bansify/mail`.
 
-| Kind of string | Example | Decision |
+**Audit vs. the brief.** §1 (domains), the `intent://` host, the two-tone header lockup and the
+widget-global dual lookup were already shipped in PR #18. §1.2 asks for
+`DEFAULT_AUTH_HUB_URL = 'https://accounts.bansify.com'`, but §1.5 of the same brief asserts that
+the Pages host can never be `AUTH_HUB_URL` (it answers HTML to a server-to-server call → 503
+`accounts_unexpected_response`), and the live Accounts Worker serves the API on
+`api.bansify.com`. The code keeps `api.` for `AUTH_HUB_URL` and the configured
+`accounts.bansify.com` for `AUTH_SIGNIN_URL`; the rest of §1 was already true.
+
+**What changed (wire compatibility, both directions)**
+
+| Surface | Before | Now |
 | --- | --- | --- |
-| Brand / display text | `Gothwad Mail`, `Checking your Gothwad account`, `<title>`, manifest, apple title, `ecosystemName` | **Bansify** |
-| Wire identifiers owned by Accounts | `gothwad-mail` (`client_id`), `X-Gothwad-Authuser`, `^gothwad_[a-z_]+=`, `com.gothwad.mail` | **unchanged** |
-| Domains | `APP_DOMAIN`, `AUTH_HUB_URL`, `AUTH_SIGNIN_URL`, `MAIL_URL` | `bansify.com` (`api.` / `accounts.` / `mail.`) |
-| Repo / npm identity | `GothwadTech/mail` | `Bansify/mail`, `bansify-mail` |
+| Forwarded cookies (`keepAccountsCookies`) | `^gothwad_[a-z_]+=` only | `^(?:gothwad\|bansify)_[a-z0-9_]+=`, nothing else forwarded |
+| Incoming selector header | `X-Gothwad-Authuser` only | either spelling, Gothwad tried first |
+| Upstream selector header | `x-gothwad-authuser` only | both headers on `/auth/me` and `/auth/switch` |
+| OAuth client | `gothwad-mail` only | `ACCEPTED_MAIL_OAUTH_CLIENT_IDS = {gothwad-mail, bansify-mail}`; anything else still 403 |
+| App Links | `com.gothwad.mail` only | both ids in `assetlinks.json` (shipped id first), and the callback bridge offers the second id as a labelled alternative button |
+| Widget stub | exported/registered `GothwadAccountMenu` only | publishes both names (legacy alias kept, still the one the harness installs) |
+| Dev server | `gothwad_*` only, Hinglish header comment | both prefixes read and set, both header spellings read, comment and seed mail in English |
+| Test harness cookie jar | `gothwad_` only | both prefixes |
 
-Accounts' `migrations/0014_first_party_native.sql` registers the mail client as `gothwad-mail`
-with package `com.gothwad.mail`, compares `X-Gothwad-Authuser` and forwards only `gothwad_*`
-cookies. Renaming those in Mail alone gives 403s to the Android app, silent sign-outs and broken
-per-tab isolation — which is what #17 did (`bansify-mail`, `X-Bansify-Authuser`, `bansify_*`
-cookies, `com.bansify.mail`, and the wrong `bansifytech.com`). This branch restores them.
+**Why both, and why the legacy name comes first:** the live `Bansify/accounts` deployment issues
+`gothwad_*` cookies, compares `X-Gothwad-Authuser`, and registers the `gothwad-mail` client, while
+the APK's `applicationId` is `com.gothwad.mail` (verified in `Bansify/mailapp/app/build.gradle.kts`
+— it also targets `android:host="mail.bansify.com"`). A rename on either side must not need a
+synchronised release, so Mail accepts both everywhere and prefers the one that exists today.
 
-**What changed**
+**Verification:** `check:sizes` (106 files), `lint`, `test:language`, `npm test`
+**232 pass / 0 fail** (worker 145, +8 in `worker/test/wire-compat.test.ts`), `build`,
+`wrangler deploy --dry-run`.
 
-- Display strings in `src/` (`App.tsx`, `Header`, `MobileDrawer`, `EmailList`, `SettingsModal`,
-  `PWAInstallButton`, `AccountSheetFallback`, `ecosystemName: 'Bansify'`), plus `index.html`,
-  `metadata.json` and `public/manifest.json`.
-- `public/oauth/callback/index.html`: prose and the `intent://` host only; the
-  `com.gothwad.mail:/oauth/callback` scheme and `assetlinks.json` are untouched.
-- `worker/src/config.ts` defaults and `worker/wrangler.toml` `[vars]` → `bansify.com`;
-  `/api/health` reports `service: "bansify-mail"` (Mail's own name).
-- No hardcoded Accounts host in browser code: `mailApi.reauthUrl()` takes the session's
-  `accountsWebOrigin`, and the switcher shows the error instead of redirecting to a guess.
-- The widget global is read under both names, new first
-  (`WIDGET_GLOBAL_KEYS = ['BansifyAccountMenu', 'GothwadAccountMenu']`).
-- Theme preference is `bansify_mail_theme`, still reading `gothwad_mail_theme` once so nobody
-  loses their choice (safe, unlike renaming the session cookies).
-- Docs, `.env.example`, tests and the dev stub follow `bansify.com`.
+## 2026-10-20 — Rebrand to Bansify, wire identifiers unchanged
 
-**Verification:** `check:sizes` (105 files, none over 500), `lint`, `npm test` 224 pass / 0 fail,
-`build`, `wrangler deploy --dry-run`. New test: legacy global read, new one preferred.
+Brand text says **Bansify**, domains come from config as `bansify.com`, and every identifier
+Accounts issues stayed put (#17 renamed them, PR #18 restored them). See the entry above.
 
 ## 2026-11-12 — Native app backend: OAuth enforcement, search, batch actions, App Links
 

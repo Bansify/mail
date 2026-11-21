@@ -97,6 +97,7 @@
       <h1>Opening Bansify Mail</h1>
       <p id="status">Handing this sign-in back to the Mail app…</p>
       <a class="button" id="open-app" href="com.gothwad.mail:/oauth/callback">Open the Mail app</a>
+      <a class="secondary" id="open-app-alt" href="com.bansify.mail:/oauth/callback">App not installed after a rename? Try the other ID</a>
       <a class="secondary" id="open-web" href="/">Continue in the browser instead</a>
     </main>
 
@@ -114,6 +115,13 @@
       //  2. Chrome on Android also understands an `intent://` URL, which skips
       //     the app chooser; it is tried first there.
       //
+      // The app's applicationId is `com.gothwad.mail` today (a package id can
+      // never be renamed for an existing install), so that is the primary
+      // target. The `com.bansify.mail` scheme is kept as an explicitly labelled
+      // second button because it costs nothing and covers a future re-release
+      // under the new id. Nothing here is auto-guessed: the primary hop always
+      // uses the id the shipped app actually has.
+      //
       // Nothing is stored, logged or sent anywhere: the query string stays in
       // this page and in the app the user chose to open.
       // =====================================================================
@@ -122,14 +130,17 @@
         var HASH = window.location.hash || '';
         var TAIL = SEARCH + HASH;
         var SCHEME = 'com.gothwad.mail:/oauth/callback';
+        var SCHEME_ALT = 'com.bansify.mail:/oauth/callback';
         var HTTPS = window.location.origin + '/oauth/callback';
         var ua = navigator.userAgent || '';
         var isAndroid = /Android/i.test(ua);
 
         var appLink = SCHEME + TAIL;
         var openApp = document.getElementById('open-app');
+        var openAppAlt = document.getElementById('open-app-alt');
         var status = document.getElementById('status');
         openApp.href = appLink;
+        openAppAlt.href = SCHEME_ALT + TAIL;
 
         if (!TAIL || TAIL === '?') {
           status.textContent =

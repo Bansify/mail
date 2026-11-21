@@ -95,7 +95,12 @@ async function callAccounts(
     accept: 'application/json',
     origin: browserOrigin(request, config),
   };
-  if (opts.selector) headers['x-gothwad-authuser'] = opts.selector;
+  if (opts.selector) {
+    // Both names: the live Accounts deployment matches the Gothwad one, and the
+    // renamed header is sent so the switch keeps working after Accounts renames it.
+    headers['x-gothwad-authuser'] = opts.selector;
+    headers['x-bansify-authuser'] = opts.selector;
+  }
   if (opts.body !== undefined) headers['content-type'] = 'application/json';
 
   let res: Response;

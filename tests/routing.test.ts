@@ -120,7 +120,8 @@ test('authUserPath builds canonical paths and clamps the index', () => {
   assert.equal(authUserPath(0, 'inbox'), '/u/0/#inbox');
   assert.equal(authUserPath(2), '/u/2/');
   assert.equal(authUserPath(99, 'sent'), '/u/5/#sent');
-  assert.deepEqual(authUserHeaders(3), { 'X-Gothwad-Authuser': '3' });
+  // Both header names, so Accounts can rename its selector without a Mail release.
+  assert.deepEqual(authUserHeaders(3), { 'X-Gothwad-Authuser': '3', 'X-Bansify-Authuser': '3' });
 });
 
 test('every mail API call carries this tab account header', async () => {
