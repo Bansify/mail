@@ -1,7 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { MailProvider, useMail } from './context/MailContext';
 import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
+import { MailPanel } from './components/MailPanel';
+import { AppDock } from './components/AppDock';
 import { EmailList } from './components/EmailList';
 import { EmailDetail } from './components/EmailDetail';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -138,11 +139,13 @@ const MainLayout: React.FC = () => {
     // 100dvh (not 100vh) so mobile browser chrome never pushes the composer off
     // screen. Every child below is flex-based, so no magic pixel heights.
     <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-white text-neutral-900 antialiased font-sans dark:bg-[#212121] dark:text-neutral-100">
-      <Header onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)} />
+      <div className="md:hidden">
+        <Header onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)} />
+      </div>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* Desktop collapsible sidebar (hidden on mobile, drawer takes over) */}
-        <Sidebar isCollapsed={isSidebarCollapsed} />
+        {/* Desktop panel: brand, compose, folders, utilities and the account block */}
+        <MailPanel collapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed((prev) => !prev)} />
 
         {/* Mobile navigation drawer */}
         <MobileDrawer />
@@ -175,6 +178,9 @@ const MainLayout: React.FC = () => {
             </div>
           )}
         </main>
+
+        {/* Right-hand app dock, same as the official website */}
+        <AppDock />
       </div>
 
       <Suspense fallback={null}>
