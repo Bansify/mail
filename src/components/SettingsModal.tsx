@@ -62,8 +62,8 @@ export const SettingsModal: React.FC = () => {
   const percent = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs select-none">
-      <div className="relative w-full max-w-xl bg-white dark:bg-[#212121] rounded-2xl shadow-2xl border border-neutral-200 dark:border-[#383838] flex flex-col max-h-[85vh] overflow-hidden">
+    <div className="flex h-full w-full flex-col bg-white dark:bg-[#2a2a2a]">
+      <div className="relative flex h-full w-full flex-col overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-neutral-200 dark:border-[#333333] flex items-center justify-between">
           <div className="flex items-center gap-2.5">

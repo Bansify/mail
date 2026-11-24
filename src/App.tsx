@@ -136,7 +136,7 @@ const MainLayout: React.FC = () => {
     <>
       <MailShell>
         {isSettingsModalOpen ? (
-          <div className="relative h-full w-full overflow-y-auto">
+          <div className="h-full w-full min-h-0">
             <SettingsModal />
           </div>
         ) : splitView === 'vertical' ? (
@@ -175,8 +175,13 @@ const MainLayout: React.FC = () => {
 /** Full-screen message used while we check the session or when it fails. */
 const Screen: React.FC<{ title: string; detail?: string; onRetry?: () => void }> = ({ title, detail, onRetry }) => (
   <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-3 bg-white p-6 text-center text-neutral-700 dark:bg-[#212121] dark:text-neutral-200">
-    <img src="/icon-192.png" alt="Bansify Mail" className="w-16 h-16 rounded-[18px] ring-1 ring-black/5 dark:ring-white/10" />
-    <p className="text-[17px] font-black tracking-tight text-[#0494f4]">Bansify</p>
+    <span className="w-20 h-20 rounded-[22px] bg-[#0494f4] overflow-hidden flex items-center justify-center shadow-lg shadow-[#0494f4]/25">
+      <img src="/icon-192.png" alt="Bansify Mail" className="w-full h-full object-cover" />
+    </span>
+    <p className="text-[19px] font-black tracking-tight">
+      <span className="text-[#0494f4]">Bansify</span>{' '}
+      <span className="text-neutral-900 dark:text-white">Mail</span>
+    </p>
     <p className="text-base font-semibold -mt-2">{title}</p>
     {/* Gmail-style indeterminate line while the account is checked */}
     {!onRetry && (
