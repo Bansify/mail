@@ -237,6 +237,20 @@ export function useMailbox({
     [currentFolder, loadFolder, showToast]
   );
 
+  const archiveEmails = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      removeFromList(ids);
+      Promise.all(ids.map((id) => mailApi.patchMessage(id, { moveToArchive: true }))).catch((err: unknown) => {
+        showToast(errorText(err));
+        void loadFolder(currentFolder);
+      });
+      setSelectedIds([]);
+      showToast(ids.length > 1 ? `${ids.length} conversations archived` : 'Conversation archived');
+    },
+    [currentFolder, loadFolder, removeFromList, showToast]
+  );
+
   const deleteEmails = useCallback(
     (ids: string[]) => {
       if (ids.length === 0) return;
@@ -316,6 +330,7 @@ export function useMailbox({
     toggleStar,
     markAsRead,
     deleteEmails,
+    archiveEmails,
     loadFolder,
     refreshEmails,
     loadMore,

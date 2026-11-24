@@ -40,8 +40,8 @@ const FOLDERS: Array<{ id: EmailFolder; label: string; icon: RailItem['icon'] }>
 ];
 
 const BrandTile: React.FC = () => (
-  <span className="w-9 h-9 rounded-[10px] bg-[#0494f4] flex items-center justify-center shrink-0 ring-1 ring-black/5 dark:ring-white/10">
-    <MailIcon className="w-[18px] h-[18px] text-white" strokeWidth={2} />
+  <span className="w-9 h-9 rounded-[10px] bg-[#0494f4] overflow-hidden flex items-center justify-center shrink-0 ring-1 ring-black/5 dark:ring-white/10">
+    <img src="/icon-192.png" alt="Bansify Mail" className="w-full h-full object-cover" />
   </span>
 );
 

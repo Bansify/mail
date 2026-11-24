@@ -85,3 +85,9 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Indeterminate loading line used by the startup screen. */
+@keyframes loading {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}

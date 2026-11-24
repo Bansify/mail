@@ -13,6 +13,7 @@ import {
   Columns,
   X,
   AlertTriangle,
+  Archive,
 } from 'lucide-react';
 import { useMail, toComposeData, toEmailMessage } from '../context/MailContext';
 import { mailApi, ApiError } from '../services/mailApi';
@@ -48,6 +49,7 @@ export const EmailList: React.FC = () => {
     toggleStar,
     markAsRead,
     deleteEmails,
+    archiveEmails,
     selectedEmailId,
     setSelectedEmailId,
     refreshEmails,
@@ -127,6 +129,14 @@ export const EmailList: React.FC = () => {
               aria-label="Mark as unread"
             >
               <Mail className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => archiveEmails(selectedIds)}
+              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-neutral-700 dark:text-neutral-200"
+              title="Archive"
+              aria-label="Archive"
+            >
+              <Archive className="w-4 h-4" />
             </button>
             <button
               onClick={() => deleteEmails(selectedIds)}
