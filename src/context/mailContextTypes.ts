@@ -76,6 +76,7 @@ export interface MailContextType {
   toggleStar: (id: string) => void;
   markAsRead: (ids: string[], isRead: boolean) => void;
   /** In Inbox/Sent/Drafts: move to Trash. In Trash: delete forever. */
+  archiveEmails: (ids: string[]) => void;
   deleteEmails: (ids: string[]) => void;
 
   sendEmail: (data: ComposeData) => Promise<boolean>;

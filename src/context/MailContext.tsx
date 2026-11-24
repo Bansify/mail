@@ -252,6 +252,7 @@ export const MailProvider: React.FC<{
     toggleStar: mailbox.toggleStar,
     markAsRead: mailbox.markAsRead,
     deleteEmails: mailbox.deleteEmails,
+    archiveEmails: mailbox.archiveEmails,
     sendEmail: compose.sendEmail,
     saveDraft: compose.saveDraft,
     composeState: compose.composeState,

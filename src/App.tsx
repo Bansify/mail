@@ -175,13 +175,15 @@ const MainLayout: React.FC = () => {
 /** Full-screen message used while we check the session or when it fails. */
 const Screen: React.FC<{ title: string; detail?: string; onRetry?: () => void }> = ({ title, detail, onRetry }) => (
   <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-3 bg-white p-6 text-center text-neutral-700 dark:bg-[#212121] dark:text-neutral-200">
-    <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0494f4]/12 text-[#0494f4]">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
-        <rect width="20" height="16" x="2" y="4" rx="3" />
-        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-      </svg>
-    </div>
-    <p className="text-base font-semibold">{title}</p>
+    <img src="/icon-192.png" alt="Bansify Mail" className="w-16 h-16 rounded-[18px] ring-1 ring-black/5 dark:ring-white/10" />
+    <p className="text-[17px] font-black tracking-tight text-[#0494f4]">Bansify</p>
+    <p className="text-base font-semibold -mt-2">{title}</p>
+    {/* Gmail-style indeterminate line while the account is checked */}
+    {!onRetry && (
+      <div className="mt-1 h-[3px] w-40 overflow-hidden rounded-full bg-neutral-200 dark:bg-[#333333]">
+        <div className="h-full w-1/3 animate-[loading_1.2s_ease-in-out_infinite] rounded-full bg-[#0494f4]" />
+      </div>
+    )}
     {detail && <p className="max-w-md text-sm text-neutral-500">{detail}</p>}
     {onRetry && (
       <button
