@@ -57,7 +57,7 @@ export const SCHEMA_STATEMENTS: readonly string[] = [
     body_gzip     BLOB,
     size_bytes    INTEGER NOT NULL DEFAULT 0,
     attachments   TEXT NOT NULL DEFAULT '[]',
-    folder        TEXT NOT NULL DEFAULT 'inbox' CHECK (folder IN ('inbox', 'sent', 'drafts', 'trash')),
+    folder        TEXT NOT NULL DEFAULT 'inbox' CHECK (folder IN ('inbox', 'sent', 'drafts', 'archive', 'trash')),
     is_read       INTEGER NOT NULL DEFAULT 0 CHECK (is_read IN (0, 1)),
     is_starred    INTEGER NOT NULL DEFAULT 0 CHECK (is_starred IN (0, 1)),
     provider_id   TEXT,

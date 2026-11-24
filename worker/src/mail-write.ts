@@ -13,6 +13,7 @@ export interface PatchInput {
   isRead?: boolean;
   isStarred?: boolean;
   moveToTrash?: boolean;
+  moveToArchive?: boolean;
   /**
    * Undo/restore: put a message back in the Inbox. `folder` is the explicit
    * spelling of the same thing, for clients that prefer one field.
@@ -53,6 +54,7 @@ export function parsePatch(body: unknown): PatchInput {
   if (b.folder !== undefined) {
     if (b.folder === 'inbox') out.moveToInbox = true;
     else if (b.folder === 'trash') out.moveToTrash = true;
+    else if (b.folder === 'archive') out.moveToArchive = true;
     else throw new HttpError(400, 'bad_folder', 'folder can only be "inbox" or "trash" here.');
   }
   if (out.moveToTrash && out.moveToInbox) {

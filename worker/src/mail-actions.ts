@@ -24,11 +24,12 @@ export interface BatchInput {
   isRead?: boolean;
   isStarred?: boolean;
   moveToTrash?: boolean;
+  moveToArchive?: boolean;
   moveToInbox?: boolean;
   deleteFromTrash?: boolean;
 }
 
-const BATCH_FIELDS = ['ids', 'isRead', 'isStarred', 'moveToTrash', 'moveToInbox', 'deleteFromTrash'];
+const BATCH_FIELDS = ['ids', 'isRead', 'isStarred', 'moveToTrash', 'moveToArchive', 'moveToInbox', 'deleteFromTrash'];
 
 function readBoolean(b: Record<string, unknown>, key: keyof BatchInput): boolean | undefined {
   const value = b[key];
@@ -65,6 +66,7 @@ export function parseBatch(body: unknown): BatchInput {
   const isRead = readBoolean(b, 'isRead');
   const isStarred = readBoolean(b, 'isStarred');
   const moveToTrash = readBoolean(b, 'moveToTrash');
+  const moveToArchive = readBoolean(b, 'moveToArchive');
   const moveToInbox = readBoolean(b, 'moveToInbox');
   const deleteFromTrash = readBoolean(b, 'deleteFromTrash');
 
@@ -76,7 +78,7 @@ export function parseBatch(body: unknown): BatchInput {
     if (others) {
       throw new HttpError(400, 'bad_field', 'deleteFromTrash cannot be combined with other actions.');
     }
-  } else if (isRead === undefined && isStarred === undefined && !moveToTrash && !moveToInbox) {
+  } else if (isRead === undefined && isStarred === undefined && !moveToTrash && !moveToArchive && !moveToInbox) {
     throw new HttpError(400, 'empty_patch', 'Nothing to change.');
   }
 
@@ -84,6 +86,7 @@ export function parseBatch(body: unknown): BatchInput {
   if (isRead !== undefined) out.isRead = isRead;
   if (isStarred !== undefined) out.isStarred = isStarred;
   if (moveToTrash !== undefined) out.moveToTrash = moveToTrash;
+  if (moveToArchive !== undefined) out.moveToArchive = moveToArchive;
   if (moveToInbox !== undefined) out.moveToInbox = moveToInbox;
   if (deleteFromTrash !== undefined) out.deleteFromTrash = deleteFromTrash;
   return out;
@@ -124,6 +127,7 @@ export async function batchMessages(db: Db, username: string, input: BatchInput)
     params.push(input.isStarred ? 1 : 0);
   }
   if (input.moveToTrash) sets.push("folder = 'trash'");
+  if (input.moveToArchive) sets.push("folder = 'archive'");
   if (input.moveToInbox) sets.push("folder = 'inbox'");
 
   const updated = await db.runCount(

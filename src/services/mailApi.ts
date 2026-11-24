@@ -86,7 +86,7 @@ export interface SessionMetaInfo {
 
 export interface ApiMessage {
   id: string;
-  folder: 'inbox' | 'sent' | 'drafts' | 'trash';
+  folder: 'inbox' | 'sent' | 'drafts' | 'archive' | 'trash';
   from: { name: string | null; email: string };
   to: string[];
   cc: string[];
