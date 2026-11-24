@@ -1,12 +1,9 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { MailProvider, useMail } from './context/MailContext';
-import { Header } from './components/Header';
-import { MailPanel } from './components/MailPanel';
-import { AppDock } from './components/AppDock';
+import { MailShell } from './components/MailShell';
 import { EmailList } from './components/EmailList';
 import { EmailDetail } from './components/EmailDetail';
 import { MobileBottomNav } from './components/MobileBottomNav';
-import { MobileDrawer } from './components/MobileDrawer';
 import { Toast } from './components/Toast';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { useSession } from './hooks/useSession';
@@ -136,55 +133,32 @@ const MainLayout: React.FC = () => {
   ]);
 
   return (
-    // 100dvh (not 100vh) so mobile browser chrome never pushes the composer off
-    // screen. Every child below is flex-based, so no magic pixel heights.
-    <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-white text-neutral-900 antialiased font-sans dark:bg-[#212121] dark:text-neutral-100">
-      <div className="md:hidden">
-        <Header onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)} />
-      </div>
-
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* Desktop panel: brand, compose, folders, utilities and the account block */}
-        <MailPanel collapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed((prev) => !prev)} />
-
-        {/* Mobile navigation drawer */}
-        <MobileDrawer />
-
-        <main
-          className={`flex min-h-0 min-w-0 flex-1 overflow-hidden ${
-            // Leave room for the mobile bottom bar only while the list is shown.
-            selectedEmailId ? '' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0'
-          }`}
-        >
-          {splitView === 'vertical' ? (
-            <div className="flex h-full w-full min-w-0 flex-1 overflow-hidden">
-              <div className="h-full w-1/2 min-w-0 overflow-hidden border-r border-neutral-200 dark:border-[#333333]">
-                <EmailList />
-              </div>
-              <div className="h-full w-1/2 min-w-0 overflow-hidden">
-                {selectedEmailId ? (
-                  <EmailDetail />
-                ) : (
-                  <div className="flex h-full select-none flex-col items-center justify-center gap-2 p-6 text-center text-neutral-400">
-                    <p className="text-sm font-semibold">Select an email to read</p>
-                    <p className="text-xs text-neutral-500">The reading pane stays on the right.</p>
-                  </div>
-                )}
-              </div>
+    <>
+      <MailShell>
+        {splitView === 'vertical' ? (
+          <div className="flex h-full w-full min-w-0 flex-1 overflow-hidden">
+            <div className="h-full w-1/2 min-w-0 overflow-hidden border-r border-zinc-200 dark:border-[#333333]">
+              <EmailList />
             </div>
-          ) : (
-            <div className="h-full min-w-0 flex-1 overflow-hidden">
-              {selectedEmailId ? <EmailDetail /> : <EmailList />}
+            <div className="h-full w-1/2 min-w-0 overflow-hidden">
+              {selectedEmailId ? (
+                <EmailDetail />
+              ) : (
+                <div className="flex h-full select-none flex-col items-center justify-center gap-2 p-6 text-center text-zinc-400">
+                  <p className="text-sm font-semibold">Select an email to read</p>
+                  <p className="text-xs text-zinc-500">The reading pane stays on the right.</p>
+                </div>
+              )}
             </div>
-          )}
-        </main>
-
-        {/* Right-hand app dock, same as the official website */}
-        <AppDock />
-      </div>
+          </div>
+        ) : (
+          <div className="h-full min-w-0 flex-1 overflow-hidden">
+            {selectedEmailId ? <EmailDetail /> : <EmailList />}
+          </div>
+        )}
+      </MailShell>
 
       <Suspense fallback={null}>
-        {/* Mounted only when opened, so the first load ships less JavaScript. */}
         {composeState.isOpen && <ComposeModal />}
         {isSettingsModalOpen && <SettingsModal />}
       </Suspense>
@@ -193,7 +167,7 @@ const MainLayout: React.FC = () => {
 
       <Toast />
       <OfflineIndicator />
-    </div>
+    </>
   );
 };
 
