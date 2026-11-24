@@ -1,7 +1,7 @@
 // Types shared by the UI. The data comes from the Mail Worker API (see
 // src/services/mailApi.ts); nothing here is demo data.
 
-export type EmailFolder = 'inbox' | 'starred' | 'sent' | 'drafts' | 'trash';
+export type EmailFolder = 'inbox' | 'starred' | 'sent' | 'drafts' | 'archive' | 'trash';
 
 export interface EmailAttachment {
   name: string;

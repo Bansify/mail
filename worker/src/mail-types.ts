@@ -9,9 +9,9 @@
 import { readBodies } from './db';
 import { HttpError } from './http';
 
-export type Folder = 'inbox' | 'starred' | 'sent' | 'drafts' | 'trash';
-export type StoredFolder = 'inbox' | 'sent' | 'drafts' | 'trash';
-const FOLDERS: readonly Folder[] = ['inbox', 'starred', 'sent', 'drafts', 'trash'];
+export type Folder = 'inbox' | 'starred' | 'sent' | 'drafts' | 'archive' | 'trash';
+export type StoredFolder = 'inbox' | 'sent' | 'drafts' | 'archive' | 'trash';
+const FOLDERS: readonly Folder[] = ['inbox', 'starred', 'sent', 'drafts', 'archive', 'trash'];
 
 export interface AttachmentMeta {
   name: string;

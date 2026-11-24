@@ -135,7 +135,11 @@ const MainLayout: React.FC = () => {
   return (
     <>
       <MailShell>
-        {splitView === 'vertical' ? (
+        {isSettingsModalOpen ? (
+          <div className="relative h-full w-full overflow-y-auto">
+            <SettingsModal />
+          </div>
+        ) : splitView === 'vertical' ? (
           <div className="flex h-full w-full min-w-0 flex-1 overflow-hidden">
             <div className="h-full w-1/2 min-w-0 overflow-hidden border-r border-zinc-200 dark:border-[#333333]">
               <EmailList />
@@ -158,10 +162,7 @@ const MainLayout: React.FC = () => {
         )}
       </MailShell>
 
-      <Suspense fallback={null}>
-        {composeState.isOpen && <ComposeModal />}
-        {isSettingsModalOpen && <SettingsModal />}
-      </Suspense>
+      <Suspense fallback={null}>{composeState.isOpen && <ComposeModal />}</Suspense>
 
       <MobileBottomNav />
 
