@@ -227,7 +227,16 @@ export const mailApi = {
 
   getMessage: (id: string) => request<{ message: ApiMessage }>(`/mail/messages/${encodeURIComponent(id)}`),
 
-  patchMessage: (id: string, patch: { isRead?: boolean; isStarred?: boolean; moveToTrash?: boolean; moveToArchive?: boolean }) =>
+  patchMessage: (
+    id: string,
+    patch: {
+      isRead?: boolean;
+      isStarred?: boolean;
+      moveToTrash?: boolean;
+      moveToInbox?: boolean;
+      moveToArchive?: boolean;
+    }
+  ) =>
     request<{ message: ApiMessage }>(`/mail/messages/${encodeURIComponent(id)}`, { method: 'PATCH', body: patch }),
 
   deleteTrashed: (id: string) =>

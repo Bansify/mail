@@ -1,5 +1,5 @@
 import { Fingerprint, HardDrive, Video, ShoppingBag, Bot, GitBranch } from 'lucide-react';
-import type { RailItem } from '../components/MailShell';
+import type { RailItem } from '../components/RailBits';
 
 /** The app dock, identical to the website's: same apps, same order, same logos. */
 export const APP_DOCK: RailItem[] = [

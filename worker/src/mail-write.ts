@@ -22,7 +22,7 @@ export interface PatchInput {
 }
 
 /** Fields the web client has always sent, plus the restore forms. */
-const PATCH_FIELDS = ['isRead', 'isStarred', 'moveToTrash', 'moveToInbox', 'folder'];
+const PATCH_FIELDS = ['isRead', 'isStarred', 'moveToTrash', 'moveToInbox', 'moveToArchive', 'folder'];
 
 export function parsePatch(body: unknown): PatchInput {
   if (!body || typeof body !== 'object') throw new HttpError(400, 'bad_body', 'Body must be an object.');
@@ -49,16 +49,21 @@ export function parsePatch(body: unknown): PatchInput {
     if (b.moveToInbox !== true) throw new HttpError(400, 'bad_field', 'moveToInbox can only be true.');
     out.moveToInbox = true;
   }
-  // `folder` is the same intent in one field. Only the two real targets exist:
+  if (b.moveToArchive !== undefined) {
+    if (b.moveToArchive !== true) throw new HttpError(400, 'bad_field', 'moveToArchive can only be true.');
+    out.moveToArchive = true;
+  }
+  // `folder` is the same intent in one field. Only the three real targets exist:
   // a message cannot be patched straight into Sent or Drafts.
   if (b.folder !== undefined) {
     if (b.folder === 'inbox') out.moveToInbox = true;
     else if (b.folder === 'trash') out.moveToTrash = true;
     else if (b.folder === 'archive') out.moveToArchive = true;
-    else throw new HttpError(400, 'bad_folder', 'folder can only be "inbox" or "trash" here.');
+    else throw new HttpError(400, 'bad_folder', 'folder can only be "inbox", "archive" or "trash" here.');
   }
-  if (out.moveToTrash && out.moveToInbox) {
-    throw new HttpError(400, 'bad_field', 'A message cannot move to Trash and the Inbox at once.');
+  const targets = [out.moveToTrash, out.moveToInbox, out.moveToArchive].filter(Boolean).length;
+  if (targets > 1) {
+    throw new HttpError(400, 'bad_field', 'A message can only move to one folder at a time.');
   }
   if (Object.keys(out).length === 0) throw new HttpError(400, 'empty_patch', 'Nothing to change.');
   return out;
@@ -77,6 +82,7 @@ export async function patchMessage(db: Db, username: string, id: string, patch: 
   }
   if (patch.moveToTrash) sets.push("folder = 'trash'");
   if (patch.moveToInbox) sets.push("folder = 'inbox'");
+  if (patch.moveToArchive) sets.push("folder = 'archive'");
 
   const row = await db.first<MailRow>(
     `UPDATE mail_messages SET ${sets.join(', ')} WHERE id = ? AND to_username = ? RETURNING ${DETAIL_COLUMNS}`,

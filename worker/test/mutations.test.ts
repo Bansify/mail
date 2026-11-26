@@ -120,8 +120,35 @@ test('PATCH rejects fields the client may not change', () => {
   assert.throws(() => parsePatch({ to_username: 'bob' }), /cannot be changed/);
   assert.throws(() => parsePatch({ moveToTrash: false }), /moveToTrash/);
   assert.throws(() => parsePatch({}), /Nothing to change/);
-  // `folder` is the restore spelling, but only for the two real targets.
+  // `folder` is the same intent in one field, for the three real targets only.
   assert.deepEqual(parsePatch({ folder: 'inbox' }), { moveToInbox: true });
   assert.deepEqual(parsePatch({ folder: 'trash' }), { moveToTrash: true });
-  assert.throws(() => parsePatch({ folder: 'sent' }), /inbox.*trash/);
+  assert.deepEqual(parsePatch({ folder: 'archive' }), { moveToArchive: true });
+  assert.throws(() => parsePatch({ folder: 'sent' }), /inbox.*archive.*trash/);
+  // Two targets at once is ambiguous, never silently one of them.
+  assert.throws(() => parsePatch({ moveToTrash: true, moveToInbox: true }), /one folder/);
+});
+
+test('archive: the Archive button really moves the row out of the Inbox', async () => {
+  h.stub = fullStub;
+  const id = await seedMessage({ folder: 'inbox', subject: 'Keepsake' });
+
+  // This is exactly what the web client sends when the user taps Archive.
+  const res = await worker.fetch(authed(`/api/mail/messages/${id}`, writeInit('PATCH', { moveToArchive: true })), h.env);
+  assert.equal(res.status, 200, 'moveToArchive is an accepted PATCH field');
+  assert.equal((await res.json()).message.folder, 'archive', 'the answer carries the new folder');
+
+  const listed = await worker.fetch(authed('/api/mail/messages?folder=archive'), h.env);
+  const body = await listed.json();
+  assert.equal(body.messages.length, 1);
+  assert.equal(body.messages[0].subject, 'Keepsake');
+
+  const inbox = await worker.fetch(authed('/api/mail/messages?folder=inbox'), h.env);
+  assert.equal((await inbox.json()).messages.length, 0, 'it left the Inbox');
+
+  // And `folder: "archive"` is the same thing in one field.
+  const back = await worker.fetch(authed(`/api/mail/messages/${id}`, writeInit('PATCH', { folder: 'inbox' })), h.env);
+  assert.equal(back.status, 200);
+  const archived = await worker.fetch(authed(`/api/mail/messages/${id}`, writeInit('PATCH', { folder: 'archive' })), h.env);
+  assert.equal((await archived.json()).message.folder, 'archive');
 });

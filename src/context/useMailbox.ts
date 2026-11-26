@@ -241,6 +241,9 @@ export function useMailbox({
     (ids: string[]) => {
       if (ids.length === 0) return;
       removeFromList(ids);
+      // The next visit to Archive must show the message that just moved there,
+      // so its cached list is dropped rather than painted stale.
+      folderCacheRef.current.delete('archive');
       Promise.all(ids.map((id) => mailApi.patchMessage(id, { moveToArchive: true }))).catch((err: unknown) => {
         showToast(errorText(err));
         void loadFolder(currentFolder);

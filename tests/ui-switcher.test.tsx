@@ -1,9 +1,9 @@
 // =============================================================================
 // Account menu UI: the shared Accounts widget, wired to real Mail state.
 //
-// Mail no longer draws its own switcher. Tapping the avatar loads
-// `window.GothwadAccountMenu` (Accounts' one-and-only Google-style sheet) and
-// hands it Mail's live data and handlers. The tests below install Mail's local
+// Mail no longer draws its own switcher. Tapping the avatar (sidebar, right dock,
+// or the phone search bar) loads `window.GothwadAccountMenu` (Accounts'
+// one-and-only Google-style sheet) and hands it Mail's live data and handlers. The tests below install Mail's local
 // stand-in for that module — same `open(state, opts)` contract, same callbacks —
 // so the whole path runs for real: header -> loader -> widget -> Mail handlers.
 //
@@ -207,9 +207,10 @@ test('the widget is re-rendered when the theme or unread counts change', async (
   await openSheet();
   await waitFor(() => isWidgetSheetOpen(), 'sheet open');
 
-  // Toggle the theme from the header: the sheet must not stay light.
+  // Toggle the theme from the sidebar (the shell's own control): the sheet must
+  // not stay light. The old header is gone, so this is the real entry point.
   const themeButton = document.querySelector('button[aria-label^="Switch to"]') as HTMLElement | null;
-  assert.ok(themeButton, 'theme toggle exists in the header');
+  assert.ok(themeButton, 'theme toggle exists in the sidebar');
   await act(async () => {
     themeButton.click();
   });
@@ -345,4 +346,32 @@ test('no account data is written to localStorage or sessionStorage', async () =>
   }
 
   await unmountApp(root);
+});
+
+test('switching back to the first account works just as well', async () => {
+  await resetAccounts();
+  const widget = await installAccountWidget();
+  const root = await mountApp('/u/0/#inbox');
+  await waitFor(() => text().includes(ALICE_ROW), 'alice inbox loaded');
+
+  await openSheet();
+  await waitFor(() => isWidgetSheetOpen(), 'open');
+  const clicked = await clickInSheet((label) => label.includes('bob@bansify.com'));
+  assert.equal(clicked, true);
+  await waitFor(() => text().includes(BOB_ROW), 'bob painted');
+
+  // The sheet must reflect the NEW active account on reopen, not the old one.
+  const trigger = accountTrigger();
+  await act(async () => {
+    trigger!.click();
+  });
+  await waitFor(() => isWidgetSheetOpen(), 'reopened');
+  const last = widget.calls[widget.calls.length - 1];
+  assert.equal(last.state.activeId, 'b', 'reopened sheet shows bob as current');
+  const back = await clickInSheet((label) => label.includes('alice@bansify.com'));
+  assert.equal(back, true, 'alice row clickable');
+  await waitFor(() => text().includes(ALICE_ROW), 'alice painted again');
+  assert.equal(window.location.pathname, '/u/0/');
+  await unmountApp(root);
+  await resetAccounts();
 });

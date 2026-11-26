@@ -16,7 +16,7 @@
     "worker:deploy": "wrangler deploy --config worker/wrangler.toml",
     "worker:secrets:list": "wrangler secret list --config worker/wrangler.toml",
     "worker:secrets": "wrangler secret put ACCOUNTS_INTERNAL_TOKEN --config worker/wrangler.toml && wrangler secret put RESEND_API_KEY --config worker/wrangler.toml",
-    "test:ui": "node --import tsx --test tests/ui-smoke.test.tsx tests/ui-switcher.test.tsx tests/ui-startup.test.tsx",
+    "test:ui": "node --import tsx --test tests/ui-smoke.test.tsx tests/ui-switcher.test.tsx tests/ui-startup.test.tsx tests/ui-mobile.test.tsx",
     "test": "npm run check:sizes && npm run test:config && npm run test:language && npm run test:startup && npm run test:auth && npm run test:routing && npm run test:assets && npm run test:widget && npm run test:worker && npm run test:d1 && npm run test:ui",
     "test:d1": "node --import tsx --test tests/local-d1.test.ts",
     "preview:api": "node --import tsx tools/dev-server.mjs",

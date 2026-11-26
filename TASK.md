@@ -2,6 +2,82 @@
 
 Updated every session. Newest first.
 
+## 2026-10-23 — Phone chrome, Archive, and the switching contract re-proved
+
+**Owner report:** "the bottom tab bar with 5 tabs should not exist — delete it at code level; check
+what is wrong with archiving chats and fix it; account switching still does not work; keep desktop
+exactly as it is, but on a phone the 3-line menu must sit outside/left of the search bar, the search
+bar in the middle, and the dock-style profile avatar to its right."
+
+**1. Bottom tab bar — deleted, not hidden.**
+`MobileBottomNav.tsx` (5 folder tabs) was still rendered by `App.tsx`. Component deleted, import and
+render site removed. Folder navigation on a phone is the drawer behind the hamburger, which already
+existed. `tests/ui-mobile.test.tsx` asserts that no bottom `nav` exists any more.
+
+**2. Archive chats — a Worker field whitelist bug.**
+The client sends `PATCH /api/mail/messages/:id { moveToArchive: true }`, but
+`worker/src/mail-write.ts` did not list `moveToArchive` in `PATCH_FIELDS`, so `parsePatch()` threw
+`400 bad_field: Field "moveToArchive" cannot be changed.` Reproduced with curl before the fix.
+
+- `moveToArchive` added to `PATCH_FIELDS`, validated as `true`-only, and mapped to `folder='archive'`
+  in `patchMessage()` (the branch was already there, only the whitelist was missing).
+- `folder: 'archive'` is now accepted as the same intent in one field, and a patch that names two
+  targets at once is rejected instead of silently picking one.
+- `src/context/useMailbox.ts`: archiving drops the cached Archive list, so opening Archive right after
+  archiving shows the message instead of a stale cached page.
+- Tests: worker `mutations.test.ts` (PATCH 200 → listed in Archive → gone from Inbox → restore → re-archive)
+  and UI `ui-mobile.test.tsx` (select a row, press the toolbar Archive, the row leaves the list and is
+  listed under Archive, then the local mailbox is restored).
+
+**3. Account switching — re-verified against the real widget, not the stub.**
+`POST /api/mail/accounts/switch {id}` answers 200 with the rewritten list, and the real
+`Bansify/accounts` `web/widget/account-menu.js` closes the sheet and delegates to `opts.onSwitchAccount`
+(no `/auth/switch` call of its own). A throwaway probe that imported the real widget sources into jsdom
+and clicked the bob row (and then back to alice) switched the mailbox and the URL: `/u/0/` → `/u/1/` →
+`/u/0/` with no overlay left behind. So the wiring shipped in the previous session is correct; a
+regression test now also switches back to the first account (and checks the reopened sheet shows the
+new active account).
+
+**4. Phone header + unchanged desktop.**
+`MailShell` now has two header rows: `md:hidden` = `[hamburger] [search pill] [dock avatar]`, and
+`hidden md:flex` = the previous pill (with the compact avatar at its right edge, as before) + the
+social card. Desktop and tablet output is byte-for-byte the old markup; the phone avatar is the same
+`AccountAvatarButton variant="desktop" compact` the right dock renders.
+
+**Verification:** `lint` ✓, `check:sizes` 112 files ✓, `npm test` (**237 pass / 0 fail**, `ui-switcher`
+12/12, new `ui-mobile` 3/3), `build` ✓, `wrangler deploy --dry-run` ✓.
+
+## 2026-10-22 — Account switching was dead: the switcher is back in the shell
+
+**Owner report:** "UI glitch — account switching is not working."
+
+**Root cause.** The `MailShell` layout (the card-based redesign) replaced the old `Header`, but the
+account sheet only ever lived inside `Header`, and `MailShell` never mounted `AccountSheet` at all.
+The profile avatar in the sidebar was a plain `<a href=".../account">` link, so tapping it left
+Mail for Accounts instead of opening the switcher. `Header.tsx` was still in the tree but nothing
+imported it, so its working switcher was dead code (`Shift+A` and the sheet were gone too). The
+UI tests had been red for the same reason: `account trigger exists`.
+
+**Fix**
+
+- `MailShell` now owns the sheet again: `AccountSheet` is mounted there, with the avatar that was
+  tapped passed as the anchor (the widget draws its card under it).
+- Every avatar is a real button that opens the sheet: the sidebar account row (`Accounts (n)`),
+  the right-hand app-dock avatar (`AccountAvatarButton`, new `compact` size) and the phone
+  search-bar avatar. `Shift+A` is restored.
+- The sidebar row became a container again: the avatar+name is the switch button and the theme
+  toggle is its own button, so neither swallows the other's click.
+- The send-quota strip (skeleton → number → retry) moved from the dead `Sidebar` into the panel, so
+  the "metadata must never block the shell" behaviour is visible again.
+- `Header.tsx` deleted (dead code, and it was the reason the switcher looked "there but broken").
+- Split for the 500-line rule, behaviour unchanged: `NavPanel.tsx` (the rail + drawer panel) and
+  `RailBits.tsx` (`RailItem`, `DockTile`). `MailShell` went from a would-be 525 lines to 259.
+
+**Verification:** `check:sizes` (111 files), `lint`, `npm test` **232 pass / 0 fail** — the 11
+`ui-switcher` tests that were failing now pass (sheet opens from the avatar, a click on bob really
+switches the mailbox with no stale row, Esc closes, sign-out hops, fallback sheet works). A throwaway
+end-to-end probe (real avatar click → sheet → bob) was run and then deleted. `build` ✓.
+
 ## 2026-10-21 — Accounts wire compatibility (the `MAIL_BACKEND_AGENT_PROMPT.md` fixes)
 
 **Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` in `Bansify/accounts` and apply every
@@ -370,131 +446,3 @@ tap.
 **Pending:** live check with the two real accounts once the Accounts PR lands.
 
 ---
-
-## 2026-10-20 — Multi-account switcher: plan + Accounts-side prompt (docs only, no code)
-
-**Owner request:** a Google-style account section — every signed-in Bansify account in one
-place, avatar plus unread count, a tap switching to that mailbox in about a second. Today Mail
-shows a single address even though `accounts.bansify.com` holds two sign-ins.
-
-**Finding:** this cannot be fixed inside Mail alone. `worker/src/session.ts` asks Accounts for
-**one** identity per request, and Accounts keeps a single session per browser. Forcing Mail to
-keep its own account list would mean storing other accounts' credentials in Mail, which is not
-allowed. No data migration is needed either: every row is already scoped by `username`.
-
-**Deliverables (docs only this session):**
-
-- `docs/ACCOUNTS_AGENT_PROMPT.md` — self-contained prompt for the Accounts agent: per-account
-  session cookies (`gothwad_sess_a..f`), HMAC-signed `gothwad_accounts` list, `gothwad_active`,
-  and four endpoints (`GET /api/auth/accounts`, `POST /api/auth/switch`,
-  `POST /api/auth/accounts/:id/signout`, `GET /signin?choose=1&add=1`). Includes the cookie
-  constraints Mail's proxy depends on, 8 required tests, and legacy single-account fallback so
-  nothing breaks.
-- `docs/MULTI_ACCOUNT_PLAN.md` — Google-parity behaviour table, Mail-side work (proxy endpoints
-  in a new `worker/src/accounts.ts`, session plumbing + cache reset, switcher UI in
-  `AccountSheet`, instant switch), security checklist, 12 acceptance tests, $0 cost, rollback.
-
-**Key design decisions:**
-
-- **Server-side path resolution, not a client header.** The active account is a cookie resolved
-  by Accounts, so `GET /api/auth/me` keeps returning one identity and `session.ts` needs no change.
-- **Mail proxies Accounts, no CORS.** Reuses `takeUpstreamCookies` so `Set-Cookie` rotation is
-  forwarded exactly as it is today.
-- **404 fallback = hidden switcher.** Mail can ship first and light up when Accounts deploys.
-- **Caches cleared before first paint on switch** (privacy, not just freshness).
-- Unread per account is computed in Mail's D1 for Accounts-verified usernames only.
-
-**Blocked on:** Accounts repo (Part A). Mail-side Part B starts when that contract exists.
-
----
-
-## 2026-10-20 — Fast, mobile-first UI + PWA polish (layout, caching, ETag)
-
-**Owner request:** make the webmail feel right on mobile and desktop, keep the UI simple, make
-it lightweight/fast with caching so Cloudflare does not redo work for already-seen mail, and
-make PWA support solid.
-
-**Backend (why: less work for repeated reads)**
-
-- `GET /api/mail/messages/:id` now sends an **ETag** built from cheap columns only
-  (`id`, `is_read`, `is_starred`, `size_bytes`, `received_at`) and answers **304** when the
-  client's `If-None-Match` matches. The gzip decompression is skipped entirely on a 304.
-  `Cache-Control: private, no-cache` keeps it per-user and always revalidated.
-- `DETAIL_COLUMNS` now includes `size_bytes` (the tag was otherwise built from `undefined`).
-- New helpers in `worker/src/mail.ts`: `getMessageRow`, `messageEtag`, `etagMatches`.
-- Test: revalidation returns 304 with an empty body; a PATCH invalidates the tag.
-
-**Frontend (why: instant, native feel)**
-
-- `MailContext`: per-folder memory cache (paint cached list, revalidate in the background with
-  a thin progress strip; a failed refresh keeps the cached list), detail cache,
-  `prefetchEmail()` on hover/touch/focus, `isRefreshing`, `unreadInboxCount`.
-- `App.tsx`: `100dvh` shell with flex `min-h-0` (no `calc(100vh-...)`), lazy-loaded
-  `ComposeModal`/`SettingsModal` (separate ~8 KB chunks), unread count in the tab title,
-  `${'/'}` focuses search, deep links `/?folder=` and `/?compose=1` for PWA shortcuts.
-- `EmailList`: skeleton rows instead of a spinner, unread dot, 60px tap targets, keyboard
-  open on Enter, `overscroll-contain`, revalidation strip.
-- `EmailDetail`: message iframe fills the available height (no nested scroll), skeleton body,
-  attachments in a bordered footer, bottom safe-area padding.
-- `MobileBottomNav`: 5 folders + unread badge + active indicator, round compose FAB,
-  `env(safe-area-inset-bottom)` padding. `Sidebar`/`MobileDrawer`: unread badge, collapse width.
-- `index.css`: `prefers-reduced-motion` support, 16px inputs on mobile (no iOS zoom),
-  `overscroll-behavior`, height roots.
-- `index.html`: non-blocking Google Fonts (system font first, swap when ready).
-- `manifest.json`: `display_override`, orientation, categories, 3 shortcuts, `id`.
-  `vite.config.ts`: Workbox `navigateFallback`, **`/api/*` excluded from the SW cache**,
-  font + image runtime caching, `skipWaiting`/`clientsClaim`.
-
-**Verified**
-
-- `npm run lint` pass. `npm test` → **93 pass** (config 10, auth 5, worker 58, d1 15, ui 5).
-- `npm run build` → main `index` 295.34 kB (87.95 kB gzip) + `ComposeModal` 8.74 kB +
-  `SettingsModal` 8.28 kB lazy chunks; SW precache 31 entries.
-- Live preview: `If-None-Match` on a message returned **304 with 0 bytes**; folder switching
-  and the Settings retention toggle still work.
-
----
-
-## 2026-10-20 — Clarify the Builds settings: keep Root directory `/`, set the Preview command
-
-**Report:** while fixing the red PR check, the owner changed the **Production** Root directory
-from `/` to `worker`. The dashboard's Previews tab does have a **Preview command** field, so no
-file move is needed.
-
-**Correction captured in `docs/SETUP.md`:**
-
-- Root directory stays **`/`** for Production **and** Previews. `package.json`, `node_modules`
-  and `worker/` all live at the root, and `--config worker/wrangler.toml` is relative to it.
-  Root = `worker` would break production twice: `npm ci` finds no `package.json`, and the
-  config path would resolve to `worker/worker/wrangler.toml`.
-- Production: Build command `npm ci`, Deploy command `npm run worker:deploy`.
-- Previews: Build command `npm ci`, **Preview command**
-  `npx wrangler preview --config worker/wrangler.toml`.
-- Then retry the failed build. The `previews = {}` block in `worker/wrangler.toml` is what
-  `wrangler preview` needs once it can see the config.
-
-No application code changed in this entry.
-
----
-
-## 2026-10-20 — Fix red "Workers Builds: mail" check (missing `previews` block)
-
-**Root cause:** Workers Builds runs `npx wrangler deploy` on `main`, but
-`npx wrangler preview` on non-production branches. Since Worker Previews shipped,
-`wrangler preview` refuses to start without a `previews` block, so every PR build failed
-before compiling anything (the same check was already red on PR #7, which still merged).
-
-**Done (merged in PR #8):** `previews = {}` in `worker/wrangler.toml`, kept empty on purpose so
-a Preview has no D1 binding and no secrets and can never touch production mail. Guarded by
-`tests/worker-config.test.ts`; documented in `AGENTS.md` and `docs/SETUP.md`.
-
-**Verified:** `npx wrangler preview --config worker/wrangler.toml` gets past the config check
-and stops only at the expected local-only `CLOUDFLARE_API_TOKEN` error, which Workers Builds
-provides.
-
----
-
----
-
-Older sessions (D1 migration, the worker-name/URL fixes, the first real UI) are in
-[`docs/TASK_ARCHIVE.md`](docs/TASK_ARCHIVE.md).
