@@ -1,8 +1,38 @@
 # HANDOVER.md — where this repository stands
 
-Last updated: 2026-10-22. Read this first if you are picking the work up.
+Last updated: 2026-10-23. Read this first if you are picking the work up.
 
-## Latest: the account switcher lives in the shell
+## Latest: phone chrome, Archive, and the switching contract
+
+**Phones have no bottom tab bar.** `MobileBottomNav.tsx` (5 folder tabs) was deleted outright, along
+with its import/render in `App.tsx` — folders on a phone live in the drawer behind the hamburger.
+`tests/ui-mobile.test.tsx` fails if any bottom `nav` comes back.
+
+**The phone header is `[hamburger] [search] [avatar]`.** In `MailShell`, the `md:hidden` header row
+holds, in order: the 3-line menu button, the search pill, and `AccountAvatarButton variant="desktop"
+compact` — the exact component the desktop dock renders. The `hidden md:flex` row is the previous
+markup, unchanged (search pill with its compact avatar at the right edge, plus the social card), so
+desktop output is identical.
+
+**Archive works because of one Worker whitelist.** The client sends
+`PATCH /api/mail/messages/:id { moveToArchive: true }`; `worker/src/mail-write.ts` now lists
+`moveToArchive` in `PATCH_FIELDS` (validated as `true`-only) and maps it to `folder='archive'`.
+`folder: 'archive'` is accepted too, and naming two targets at once is a 400. Archiving also drops
+the cached Archive list (`src/context/useMailbox.ts`), so opening Archive right after shows the
+message. Do **not** "fix" a future archive bug by changing the client to `{folder}` only — the
+shipped app and native clients send `moveToArchive`, so the Worker must keep accepting it.
+
+**Account switching was re-proved against the real Accounts widget**, not only the local stub: a
+throwaway probe imported `Bansify/accounts`' `web/widget/account-menu.js` into jsdom, clicked the bob
+row (then alice again) and the mailbox + URL moved `/u/0/` → `/u/1/` → `/u/0/` with the overlay gone.
+The real widget never calls `/auth/switch` itself when `opts.onSwitchAccount` exists — it closes the
+sheet and delegates. So a switching bug is always on Mail's handler/opt wiring; the Worker endpoint
+(`POST /api/mail/accounts/switch`, requires an `Origin` header like every write) answers 200.
+
+**Checks:** `lint`, `check:sizes` (112 files), `npm test` (237 pass / 0 fail; `ui-switcher` 12/12,
+`ui-mobile` 3/3), `build`, `wrangler deploy --dry-run`.
+
+## Previous: the account switcher lives in the shell
 
 The card-based `MailShell` had replaced the old `Header` without moving the account sheet with it,
 so the avatar was a plain link to Accounts and switching did nothing (`Shift+A` too). The sheet is

@@ -347,3 +347,31 @@ test('no account data is written to localStorage or sessionStorage', async () =>
 
   await unmountApp(root);
 });
+
+test('switching back to the first account works just as well', async () => {
+  await resetAccounts();
+  const widget = await installAccountWidget();
+  const root = await mountApp('/u/0/#inbox');
+  await waitFor(() => text().includes(ALICE_ROW), 'alice inbox loaded');
+
+  await openSheet();
+  await waitFor(() => isWidgetSheetOpen(), 'open');
+  const clicked = await clickInSheet((label) => label.includes('bob@bansify.com'));
+  assert.equal(clicked, true);
+  await waitFor(() => text().includes(BOB_ROW), 'bob painted');
+
+  // The sheet must reflect the NEW active account on reopen, not the old one.
+  const trigger = accountTrigger();
+  await act(async () => {
+    trigger!.click();
+  });
+  await waitFor(() => isWidgetSheetOpen(), 'reopened');
+  const last = widget.calls[widget.calls.length - 1];
+  assert.equal(last.state.activeId, 'b', 'reopened sheet shows bob as current');
+  const back = await clickInSheet((label) => label.includes('alice@bansify.com'));
+  assert.equal(back, true, 'alice row clickable');
+  await waitFor(() => text().includes(ALICE_ROW), 'alice painted again');
+  assert.equal(window.location.pathname, '/u/0/');
+  await unmountApp(root);
+  await resetAccounts();
+});

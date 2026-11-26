@@ -109,17 +109,19 @@ export const MailShell: React.FC<{ children: React.ReactNode }> = ({ children })
         )}
 
         <div className="flex flex-1 min-w-0 flex-col gap-3">
-          {/* search pill and social card, above the content only */}
-          <div className="flex gap-3 shrink-0">
-            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
-              <button
-                type="button"
-                onClick={() => setMobileNav(true)}
-                aria-label="Open navigation"
-                className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-zinc-500 cursor-pointer shrink-0"
-              >
-                <Menu className="w-5 h-5" strokeWidth={1.75} />
-              </button>
+          {/* Phones: menu on the left, search in the middle, the profile avatar
+              on the right (the same one the dock shows on a desktop). */}
+          <div className="flex md:hidden items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileNav(true)}
+              aria-label="Open navigation"
+              className="w-10 h-10 shrink-0 rounded-full border border-zinc-200 bg-white flex items-center justify-center text-zinc-600 dark:border-[#333333] dark:bg-[#2a2a2a] dark:text-zinc-300 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" strokeWidth={1.75} />
+            </button>
+
+            <div className="flex-1 min-w-0 flex items-center gap-2 h-10 px-3 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
               <Search className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.75} />
               <input
                 value={searchQuery}
@@ -130,7 +132,26 @@ export const MailShell: React.FC<{ children: React.ReactNode }> = ({ children })
                 placeholder="Search mail"
                 className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
               />
-              {/* Phones have no visible rail, so the avatar lives in this row. */}
+            </div>
+
+            <AccountAvatarButton variant="desktop" compact onOpen={openAccountSheet} />
+          </div>
+
+          {/* Tablets and up: the search pill with the social links beside it. */}
+          <div className="hidden md:flex gap-3 shrink-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
+              <Search className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.75} />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') resetSearch();
+                }}
+                placeholder="Search mail"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
+              />
+              {/* Unchanged desktop detail: the compact avatar still rides in the
+                  search pill (tablets have no right dock). */}
               <AccountAvatarButton variant="mobile" compact onOpen={openAccountSheet} />
             </div>
 

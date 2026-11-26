@@ -3,7 +3,6 @@ import { MailProvider, useMail } from './context/MailContext';
 import { MailShell } from './components/MailShell';
 import { EmailList } from './components/EmailList';
 import { EmailDetail } from './components/EmailDetail';
-import { MobileBottomNav } from './components/MobileBottomNav';
 import { Toast } from './components/Toast';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { useSession } from './hooks/useSession';
@@ -162,8 +161,6 @@ const MainLayout: React.FC = () => {
       </MailShell>
 
       <Suspense fallback={null}>{composeState.isOpen && <ComposeModal />}</Suspense>
-
-      <MobileBottomNav />
 
       <Toast />
       <OfflineIndicator />
