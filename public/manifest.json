@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Bansify Mail",
-  "short_name": "BansifyMail",
-  "description": "Fast, modern desktop and mobile webmail for your Bansify address, signed in with Bansify Accounts.",
+  "name": "Bansify Mail \u2014 India's Email System",
+  "short_name": "Bansify Mail",
+  "description": "The inbox for your @bansify.com address. Fast webmail on desktop and mobile, signed in with your Bansify Account.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
