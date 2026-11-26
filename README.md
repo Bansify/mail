@@ -1,7 +1,7 @@
 # Bansify Mail
 
 Webmail for `username@APP_DOMAIN` addresses. You sign in with **Bansify Accounts**, and
-your address comes from your username.
+your address comes from your username
 
 - **Web app**: React + Vite + Tailwind PWA (`src/`).
 - **Mail Worker** (`worker/`): Cloudflare Worker. REST API under `/api/*`, plus the inbound
