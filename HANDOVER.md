@@ -1,8 +1,17 @@
 # HANDOVER.md — where this repository stands
 
-Last updated: 2026-10-21. Read this first if you are picking the work up.
+Last updated: 2026-10-22. Read this first if you are picking the work up.
 
-## Latest: wire compatibility — accept both names, prefer the live one
+## Latest: the account switcher lives in the shell
+
+The card-based `MailShell` had replaced the old `Header` without moving the account sheet with it,
+so the avatar was a plain link to Accounts and switching did nothing (`Shift+A` too). The sheet is
+mounted in `MailShell` again and every avatar (sidebar row, right dock, phone search bar) opens it
+with its own element as the anchor. `Header.tsx` is gone; its panel became `NavPanel.tsx` and the
+shared tile bits `RailBits.tsx`, so no file is near the 500-line limit. If you add a new avatar,
+call `openAccountSheet(event.currentTarget)` — never link straight to Accounts.
+
+## Previous: wire compatibility — accept both names, prefer the live one
 
 `worker/src/session.ts` now forwards rotated cookies matching `^(?:gothwad|bansify)_[a-z0-9_]+=`
 (and nothing else), accepts either `X-Gothwad-Authuser` / `X-Bansify-Authuser` on incoming

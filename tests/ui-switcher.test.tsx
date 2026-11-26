@@ -1,9 +1,9 @@
 // =============================================================================
 // Account menu UI: the shared Accounts widget, wired to real Mail state.
 //
-// Mail no longer draws its own switcher. Tapping the avatar loads
-// `window.GothwadAccountMenu` (Accounts' one-and-only Google-style sheet) and
-// hands it Mail's live data and handlers. The tests below install Mail's local
+// Mail no longer draws its own switcher. Tapping the avatar (sidebar, right dock,
+// or the phone search bar) loads `window.GothwadAccountMenu` (Accounts'
+// one-and-only Google-style sheet) and hands it Mail's live data and handlers. The tests below install Mail's local
 // stand-in for that module — same `open(state, opts)` contract, same callbacks —
 // so the whole path runs for real: header -> loader -> widget -> Mail handlers.
 //
@@ -207,9 +207,10 @@ test('the widget is re-rendered when the theme or unread counts change', async (
   await openSheet();
   await waitFor(() => isWidgetSheetOpen(), 'sheet open');
 
-  // Toggle the theme from the header: the sheet must not stay light.
+  // Toggle the theme from the sidebar (the shell's own control): the sheet must
+  // not stay light. The old header is gone, so this is the real entry point.
   const themeButton = document.querySelector('button[aria-label^="Switch to"]') as HTMLElement | null;
-  assert.ok(themeButton, 'theme toggle exists in the header');
+  assert.ok(themeButton, 'theme toggle exists in the sidebar');
   await act(async () => {
     themeButton.click();
   });

@@ -13,15 +13,21 @@ import { useMail } from '../context/MailContext';
 
 export interface AccountAvatarButtonProps {
   variant: 'mobile' | 'desktop';
+  /** Tighter sizing for the narrow right-hand dock. */
+  compact?: boolean;
   onOpen: (anchor: HTMLElement) => void;
 }
 
-export const AccountAvatarButton: React.FC<AccountAvatarButtonProps> = ({ variant, onOpen }) => {
+export const AccountAvatarButton: React.FC<AccountAvatarButtonProps> = ({ variant, compact = false, onOpen }) => {
   const { currentUser, accounts, activeAccountId } = useMail();
 
   const others = accounts.filter((account) => account.id !== activeAccountId);
-  const size = variant === 'mobile' ? 'h-8 w-8' : 'h-10 w-10';
-  const bubbleSize = variant === 'mobile' ? 'h-8 w-8 text-[10px] -mr-2.5' : 'h-10 w-10 text-[11px] -mr-3';
+  const size = compact ? 'h-9 w-9' : variant === 'mobile' ? 'h-8 w-8' : 'h-10 w-10';
+  const bubbleSize = compact
+    ? 'h-6 w-6 text-[9px] -mr-1.5'
+    : variant === 'mobile'
+      ? 'h-8 w-8 text-[10px] -mr-2.5'
+      : 'h-10 w-10 text-[11px] -mr-3';
   const label =
     accounts.length > 1 ? `Accounts (${accounts.length})` : variant === 'mobile' ? 'Account details' : 'User profile';
 
@@ -30,7 +36,7 @@ export const AccountAvatarButton: React.FC<AccountAvatarButtonProps> = ({ varian
       type="button"
       onClick={(event) => onOpen(event.currentTarget)}
       className={`relative flex shrink-0 items-center rounded-full shadow-sm transition-opacity hover:opacity-90 ${
-        variant === 'mobile' ? 'ml-1 h-8' : 'h-10'
+        compact ? 'h-9' : variant === 'mobile' ? 'ml-1 h-8' : 'h-10'
       }`}
       aria-label={label}
       aria-haspopup="dialog"

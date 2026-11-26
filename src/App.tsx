@@ -22,7 +22,6 @@ const SettingsModal = lazy(() =>
 );
 
 const MainLayout: React.FC = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const {
     selectedEmailId,
     setSelectedEmailId,

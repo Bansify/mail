@@ -2,6 +2,37 @@
 
 Updated every session. Newest first.
 
+## 2026-10-22 — Account switching was dead: the switcher is back in the shell
+
+**Owner report:** "UI glitch — account switching is not working."
+
+**Root cause.** The `MailShell` layout (the card-based redesign) replaced the old `Header`, but the
+account sheet only ever lived inside `Header`, and `MailShell` never mounted `AccountSheet` at all.
+The profile avatar in the sidebar was a plain `<a href=".../account">` link, so tapping it left
+Mail for Accounts instead of opening the switcher. `Header.tsx` was still in the tree but nothing
+imported it, so its working switcher was dead code (`Shift+A` and the sheet were gone too). The
+UI tests had been red for the same reason: `account trigger exists`.
+
+**Fix**
+
+- `MailShell` now owns the sheet again: `AccountSheet` is mounted there, with the avatar that was
+  tapped passed as the anchor (the widget draws its card under it).
+- Every avatar is a real button that opens the sheet: the sidebar account row (`Accounts (n)`),
+  the right-hand app-dock avatar (`AccountAvatarButton`, new `compact` size) and the phone
+  search-bar avatar. `Shift+A` is restored.
+- The sidebar row became a container again: the avatar+name is the switch button and the theme
+  toggle is its own button, so neither swallows the other's click.
+- The send-quota strip (skeleton → number → retry) moved from the dead `Sidebar` into the panel, so
+  the "metadata must never block the shell" behaviour is visible again.
+- `Header.tsx` deleted (dead code, and it was the reason the switcher looked "there but broken").
+- Split for the 500-line rule, behaviour unchanged: `NavPanel.tsx` (the rail + drawer panel) and
+  `RailBits.tsx` (`RailItem`, `DockTile`). `MailShell` went from a would-be 525 lines to 259.
+
+**Verification:** `check:sizes` (111 files), `lint`, `npm test` **232 pass / 0 fail** — the 11
+`ui-switcher` tests that were failing now pass (sheet opens from the avatar, a click on bob really
+switches the mailbox with no stale row, Esc closes, sign-out hops, fallback sheet works). A throwaway
+end-to-end probe (real avatar click → sheet → bob) was run and then deleted. `build` ✓.
+
 ## 2026-10-21 — Accounts wire compatibility (the `MAIL_BACKEND_AGENT_PROMPT.md` fixes)
 
 **Owner request:** read `docs/MAIL_BACKEND_AGENT_PROMPT.md` in `Bansify/accounts` and apply every
@@ -454,47 +485,3 @@ make PWA support solid.
   and the Settings retention toggle still work.
 
 ---
-
-## 2026-10-20 — Clarify the Builds settings: keep Root directory `/`, set the Preview command
-
-**Report:** while fixing the red PR check, the owner changed the **Production** Root directory
-from `/` to `worker`. The dashboard's Previews tab does have a **Preview command** field, so no
-file move is needed.
-
-**Correction captured in `docs/SETUP.md`:**
-
-- Root directory stays **`/`** for Production **and** Previews. `package.json`, `node_modules`
-  and `worker/` all live at the root, and `--config worker/wrangler.toml` is relative to it.
-  Root = `worker` would break production twice: `npm ci` finds no `package.json`, and the
-  config path would resolve to `worker/worker/wrangler.toml`.
-- Production: Build command `npm ci`, Deploy command `npm run worker:deploy`.
-- Previews: Build command `npm ci`, **Preview command**
-  `npx wrangler preview --config worker/wrangler.toml`.
-- Then retry the failed build. The `previews = {}` block in `worker/wrangler.toml` is what
-  `wrangler preview` needs once it can see the config.
-
-No application code changed in this entry.
-
----
-
-## 2026-10-20 — Fix red "Workers Builds: mail" check (missing `previews` block)
-
-**Root cause:** Workers Builds runs `npx wrangler deploy` on `main`, but
-`npx wrangler preview` on non-production branches. Since Worker Previews shipped,
-`wrangler preview` refuses to start without a `previews` block, so every PR build failed
-before compiling anything (the same check was already red on PR #7, which still merged).
-
-**Done (merged in PR #8):** `previews = {}` in `worker/wrangler.toml`, kept empty on purpose so
-a Preview has no D1 binding and no secrets and can never touch production mail. Guarded by
-`tests/worker-config.test.ts`; documented in `AGENTS.md` and `docs/SETUP.md`.
-
-**Verified:** `npx wrangler preview --config worker/wrangler.toml` gets past the config check
-and stops only at the expected local-only `CLOUDFLARE_API_TOKEN` error, which Workers Builds
-provides.
-
----
-
----
-
-Older sessions (D1 migration, the worker-name/URL fixes, the first real UI) are in
-[`docs/TASK_ARCHIVE.md`](docs/TASK_ARCHIVE.md).
