@@ -27,6 +27,12 @@
                 android:name="com.bansify.wrap.SPLASH_DURATION_MS"
                 android:value="700" />
 
+            <!-- Version gate: raise minVersionCode in public/app-version.json to
+                 make older installs show an update screen instead of the site. -->
+            <meta-data
+                android:name="com.bansify.wrap.VERSION_URL"
+                android:value="https://mail.bansify.com/app-version.json" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

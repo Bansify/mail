@@ -1,0 +1,4 @@
+{
+  "minVersionCode": 0,
+  "note": "Raise this to force an app update. The wrapper compares it with its own version code and shows an update screen when it is lower. 0 means no gate."
+}
