@@ -17,6 +17,9 @@ on:
         default: ''
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   release:
     uses: Bansify/bansifywrap/.github/workflows/twa-release.yml@main
