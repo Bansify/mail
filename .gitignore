@@ -20,3 +20,9 @@ worker/.dev-d1.sqlite
 
 # Vite PWA dev build output (regenerated on every dev run)
 dev-dist
+
+# Android build outputs and the CI-only keystore
+android.keystore
+android/app/keystore.jks
+android/.gradle/
+android/**/build/

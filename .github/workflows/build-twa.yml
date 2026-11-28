@@ -1,0 +1,169 @@
+name: Build Bansify TWA APK & Play Store AAB
+
+on:
+  # Manual only. Nothing here runs on a push, and nothing is guessed:
+  # the run needs a version name + version code typed in, and the four signing
+  # secrets (set once at ORGANISATION level in Bansify, so every app repo
+  # inherits the same keystore and therefore the same SHA-256 fingerprint).
+  # Every run publishes a GitHub Release tagged v<version name>.
+  #
+  # This workflow packages ONE app: Bansify Mail. Copying it to another app
+  # repo means changing the single APP_SLUG below ("Determine version" step) and
+  # the package names in that repo's .well-known/assetlinks.json.
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'App version name, e.g. 1.0.14 (required - no auto numbering)'
+        required: true
+        default: ''
+        type: string
+      version_code:
+        description: 'Play Store integer version code, e.g. 14 (required - no auto numbering)'
+        required: true
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-twa:
+    name: Build Signed TWA (mail)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: versioning
+        run: |
+          # The only per-app line in this workflow: change it when copying the
+          # file to another app repo (mail, drive, meet, pay, ai, gitplus).
+          APP_SLUG="mail"
+          V_NAME="${{ inputs.version_name }}"
+          V_CODE="${{ inputs.version_code }}"
+
+          # Both values are typed in by hand on every run. Nothing is derived
+          # from the run number: a release only exists for a version someone
+          # deliberately chose.
+          if [ -z "$V_NAME" ] || [ -z "$V_CODE" ]; then
+            echo "::error title=Version missing::version_name and version_code are both required."
+            exit 1
+          fi
+          if ! [[ "$V_CODE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error title=Bad version code::version_code must be a positive integer (got '$V_CODE'). Play Store rejects anything else."
+            exit 1
+          fi
+          if ! [[ "$V_NAME" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "::error title=Bad version name::version_name must be dotted digits like 1.0.14 (got '$V_NAME')."
+            exit 1
+          fi
+
+          echo "app_slug=${APP_SLUG}" >> "$GITHUB_OUTPUT"
+          echo "v_code=${V_CODE}" >> "$GITHUB_OUTPUT"
+          echo "v_name=${V_NAME}" >> "$GITHUB_OUTPUT"
+          echo "### Bansify TWA ${APP_SLUG} v${V_NAME} (code ${V_CODE})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Ensure Android SDK Platforms 35/36 & Build-Tools
+        run: |
+          export ANDROID_SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Prepare Release Keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.TWA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.TWA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TWA_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.TWA_KEY_PASSWORD }}
+        run: |
+          # No fallback keystore is ever generated: a throwaway key would change
+          # the signing certificate, break assetlinks.json and Play Store
+          # updates. Missing secrets must stop the run.
+          MISSING=""
+          [ -n "$KEYSTORE_B64" ]   || MISSING="$MISSING TWA_KEYSTORE_BASE64"
+          [ -n "$KEYSTORE_PASS" ]  || MISSING="$MISSING TWA_KEYSTORE_PASSWORD"
+          [ -n "$KEY_ALIAS" ]      || MISSING="$MISSING TWA_KEY_ALIAS"
+          [ -n "$KEY_PASS" ]       || MISSING="$MISSING TWA_KEY_PASSWORD"
+          if [ -n "$MISSING" ]; then
+            echo "::error title=Missing signing secrets::Set these at organisation level (Bansify -> Settings -> Secrets -> Organisation) so every app repo inherits them:$MISSING"
+            exit 1
+          fi
+
+          echo "$KEYSTORE_B64" | tr -d ' \n\r\t' | base64 --decode > android.keystore
+          KS_PASS="${KEYSTORE_PASS}"
+          K_ALIAS="${KEY_ALIAS}"
+          K_PASS="${KEY_PASS}"
+
+          # The alias must really exist in the keystore, otherwise signing fails
+          # later with a confusing message.
+          if ! keytool -list -keystore android.keystore -storepass "$KS_PASS" -alias "$K_ALIAS" > /dev/null 2>&1; then
+            echo "::error title=Wrong alias::Alias '$K_ALIAS' (TWA_KEY_ALIAS) is not present in TWA_KEYSTORE_BASE64, or TWA_KEYSTORE_PASSWORD is wrong."
+            exit 1
+          fi
+          echo "KS_PASS=${KS_PASS}" >> "$GITHUB_ENV"
+          echo "K_ALIAS=${K_ALIAS}" >> "$GITHUB_ENV"
+          echo "K_PASS=${K_PASS}" >> "$GITHUB_ENV"
+          echo "### Signing Key Verification" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Alias**: \`${K_ALIAS}\`" >> "$GITHUB_STEP_SUMMARY"
+          keytool -list -v -keystore android.keystore -storepass "$KS_PASS" | grep -i "SHA256:" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Build signed APK + AAB with Gradle
+        working-directory: android
+        env:
+          APP_SLUG: ${{ steps.versioning.outputs.app_slug }}
+          VER_NAME: ${{ steps.versioning.outputs.v_name }}
+          VER_CODE: ${{ steps.versioning.outputs.v_code }}
+        run: |
+          # Signing values (KS_PASS, K_ALIAS, K_PASS) were exported by the
+          # keystore step; the app module reads them from the environment.
+          cp ../android.keystore app/keystore.jks
+          gradle :app:assembleRelease :app:bundleRelease \
+            -PversionCode="${VER_CODE}" \
+            -PversionName="${VER_NAME}" \
+            --no-daemon --stacktrace
+          rm -f app/keystore.jks
+          mkdir -p ../release_out
+          cp app/build/outputs/apk/release/app-release.apk \
+            "../release_out/bansify-${APP_SLUG}-v${VER_NAME}-release.apk"
+          cp app/build/outputs/bundle/release/app-release.aab \
+            "../release_out/bansify-${APP_SLUG}-v${VER_NAME}-playstore.aab"
+          ls -lh ../release_out
+
+      - name: Write checksums
+        run: |
+          cd release_out
+          sha256sum bansify-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload Signed APK & Play Store AAB Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bansify-${{ steps.versioning.outputs.app_slug }}-v${{ steps.versioning.outputs.v_name }}-twa-release
+          path: release_out/
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.versioning.outputs.v_name }}
+          name: v${{ steps.versioning.outputs.v_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release_out/bansify-${{ steps.versioning.outputs.app_slug }}-v${{ steps.versioning.outputs.v_name }}-release.apk
+            release_out/bansify-${{ steps.versioning.outputs.app_slug }}-v${{ steps.versioning.outputs.v_name }}-playstore.aab
+            release_out/SHA256SUMS.txt
